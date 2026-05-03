@@ -1,0 +1,63 @@
+From 003110b61cc727d199696f71b75fbf75670fd145 Mon Sep 17 00:00:00 2001
+From: tux <tux@nas.universe>
+Date: Fri, 1 May 2026 22:40:07 +0200
+Subject: [PATCH] Fix tuner module dependencies for octonet
+
+---
+ ddbridge/octonet-compat.h | 31 +++++++++++++++++++++++++++++++
+ ddbridge/octonet-main.c   |  1 +
+ 2 files changed, 32 insertions(+)
+ create mode 100644 ddbridge/octonet-compat.h
+
+diff --git a/ddbridge/octonet-compat.h b/ddbridge/octonet-compat.h
+new file mode 100644
+index 0000000..2006df7
+--- /dev/null
++++ b/ddbridge/octonet-compat.h
+@@ -0,0 +1,31 @@
++#include "drxk.h"
++#include "cxd2843.h"
++#include "stv0367.h"
++#include "tda18271c2dd.h"
++#include "tda18212dd.h"
++#include "tda18212.h"
++#include "stv090x.h"
++#include "lnbp21.h"   /* lnbh24_attach liegt oft hier */
++#include "stv6110x.h"
++#include "stv0910.h"
++#include "lnbh25.h"
++#include "stv6111.h"
++#include "mxl5xx.h"
++
++static void *__dummy_references[] __used = {
++    drxk_attach,
++    cxd2843_attach,
++    stv0367_attach,
++    tda18271c2dd_attach,
++    tda18212dd_attach,
++    tda18212_attach,
++    stv090x_attach,
++    lnbh24_attach,
++    stv6110x_attach,
++    stv0910_attach,
++    lnbh25_attach,
++    stv6111_attach,
++    mxl5xx_attach,
++};
++
++
+diff --git a/ddbridge/octonet-main.c b/ddbridge/octonet-main.c
+index 923c58e..19929e8 100644
+--- a/ddbridge/octonet-main.c
++++ b/ddbridge/octonet-main.c
+@@ -23,6 +23,7 @@
+ 
+ #include "ddbridge.h"
+ #include "ddbridge-io.h"
++#include "octonet-compat.h"
+ 
+ #if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
+ static int __exit octonet_remove(struct platform_device *pdev)
+-- 
+2.47.3
+

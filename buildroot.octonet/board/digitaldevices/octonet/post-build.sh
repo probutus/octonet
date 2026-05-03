@@ -5,6 +5,8 @@ grep -q pts $TARGETDIR/etc/securetty || echo -e "pts/0\npts/1\npts/2\npts/3" >> 
 
 mkdir -p $TARGETDIR/config
 
-grep -q admin $TARGETDIR/etc/passwd || echo -e "admin:x:200:200:nobody:/home:/bin/false" >> $TARGETDIR/etc/passwd
-grep -q admin $TARGETDIR/etc/shadow || echo -e "admin:WiBKbsJTSQ8dc:13514:0:99999:7:::" >> $TARGETDIR/etc/shadow
+grep -q console $TARGETDIR/etc/securetty || echo -e "console" >> $TARGETDIR/etc/securetty
+
+chmod 777 $TARGETDIR/var/monitor/fancontrol.lua  
+
 

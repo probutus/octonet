@@ -1,5 +1,7 @@
-source "$BR2_EXTERNAL/package/octonet/Config.in"
-source "$BR2_EXTERNAL/package/octoserve/Config.in"
-source "$BR2_EXTERNAL/package/octoscan/Config.in"
-source "$BR2_EXTERNAL/package/lunajson/Config.in"
-source "$BR2_EXTERNAL/package/dddvb/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/octonet/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/octoserve/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/octoscan/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/lunajson/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/dddvb/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/dvb-apps-tbs/Config.in"
+

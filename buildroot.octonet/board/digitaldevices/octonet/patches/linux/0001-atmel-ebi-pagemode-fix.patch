@@ -1,0 +1,20 @@
+diff -Naur linux-6.12.81.orig/drivers/memory/atmel-ebi.c linux-6.12.81/drivers/memory/atmel-ebi.c
+--- linux-6.12.81.orig/drivers/memory/atmel-ebi.c	2026-05-03 13:05:42.719291268 +0200
++++ linux-6.12.81/drivers/memory/atmel-ebi.c	2026-05-03 13:08:21.119205261 +0200
+@@ -265,8 +265,14 @@
+ 		default:
+ 			return -EINVAL;
+ 		}
+-
+-		smcconf->mode |= ATMEL_SMC_MODE_PMEN;
++                ret = of_property_read_u32(np, "atmel,smc-page-mode-enable", &tmp);
++                if (!ret) {
++                        if (tmp == 1) {
++		                smcconf->mode |= ATMEL_SMC_MODE_PMEN;
++                        }
++                } else {
++                        smcconf->mode |= ATMEL_SMC_MODE_PMEN;
++                }
+ 		required = true;
+ 	}
+ 

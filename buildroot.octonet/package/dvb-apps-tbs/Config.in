@@ -1,0 +1,5 @@
+config BR2_PACKAGE_DVB_APPS_TBS
+    bool "dvb-apps-tbs"
+    help
+      TBS variant of dvb-apps.
+

@@ -8,12 +8,12 @@ if [ ! -e linux.octonet ]; then
 fi
 
 if [ ! -e buildroot ]; then
-  if [ ! -e buildroot-2015.02.tar.bz2 ]; then
-     wget --no-check-certificate http://buildroot.org/downloads/buildroot-2015.02.tar.bz2
+  if [ ! -e buildroot-2025.02.13.tar.xz ]; then
+     wget --no-check-certificate http://buildroot.org/downloads/buildroot-2025.02.13.tar.xz
   fi
-  tar xf buildroot-2015.02.tar.bz2
-  mv buildroot-2015.02 buildroot
-  patch -d buildroot -p1 < buildroot.patch
+  tar xf buildroot-2025.02.13.tar.bz2
+  mv buildroot-2025.02.13 buildroot
+  #patch -d buildroot -p1 < buildroot.patch
   if [ -e dl ]; then
      ln -sf ../dl buildroot
   fi
