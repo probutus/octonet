@@ -12,7 +12,14 @@ define MINISATIP_REMOVE_STACKTRACE_CODE
 	sed -i 's/.*std::to_string(trace).*/\/\/ &/' $(@D)/src/utils.cpp
 endef
 
+define MINISATIP_INSTALL_HTML
+	mkdir -p $(TARGET_DIR)/var/satip/www
+	cp -r $(@D)/html/* $(TARGET_DIR)/var/satip/www/
+endef
+
 MINISATIP_POST_PATCH_HOOKS += MINISATIP_REMOVE_STACKTRACE_CODE
+
+MINISATIP_POST_INSTALL_TARGET_HOOKS += MINISATIP_INSTALL_HTML
 
 $(eval $(cmake-package))
 
