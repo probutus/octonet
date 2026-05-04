@@ -264,7 +264,7 @@ define PYTHON2_CREATE_PYC_FILES
 	$(PYTHON2_FIX_TIME)
 	PYTHONPATH="$(PYTHON2_PATH)" \
 	$(HOST_DIR)/bin/python$(PYTHON2_VERSION_MAJOR) \
-		$($(PYTHON2_PKGDIR)/pycompile.py \
+		$(PYTHON2_PKGDIR)/pycompile.py \
 		$(if $(VERBOSE),--verbose) \
 		--strip-root $(TARGET_DIR) \
 		$(TARGET_DIR)/usr/lib/python$(PYTHON2_VERSION_MAJOR)
