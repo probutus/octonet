@@ -5,8 +5,3 @@ grep -q pts $TARGETDIR/etc/securetty || echo -e "pts/0\npts/1\npts/2\npts/3" >> 
 
 mkdir -p $TARGETDIR/config
 
-grep -q console $TARGETDIR/etc/securetty || echo -e "console" >> $TARGETDIR/etc/securetty
-
-chmod 777 $TARGETDIR/var/monitor/fancontrol.lua  
-
-
