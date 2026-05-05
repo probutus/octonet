@@ -7,15 +7,18 @@ DVB_APPS_TBS_INSTALL_STAGING = YES
 DVB_APPS_TBS_MAKE_OPTS = $(TARGET_CONFIGURE_OPTS) CFLAGS="$(TARGET_CFLAGS) -I$(@D)/lib -DLOG_LEVEL=3 -DERROR=1"
 
 define DVB_APPS_TBS_BUILD_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)/lib $(DVB_APPS_TBS_MAKE_OPTS)
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) $(DVB_APPS_TBS_MAKE_OPTS) \
+		PERL="perl -I."
 endef
 
 define DVB_APPS_TBS_INSTALL_STAGING_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)/lib $(DVB_APPS_TBS_MAKE_OPTS) DESTDIR=$(STAGING_DIR) install
+	# Installiert Libs und Header für andere Pakete
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) $(DVB_APPS_TBS_MAKE_OPTS) DESTDIR=$(STAGING_DIR) install
 endef
 
 define DVB_APPS_TBS_INSTALL_TARGET_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D)/lib $(DVB_APPS_TBS_MAKE_OPTS) DESTDIR=$(TARGET_DIR) install
+	# Installiert Libs UND alle Binaries (zap, scan, dvbnet, etc.) ins Target
+	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) $(DVB_APPS_TBS_MAKE_OPTS) DESTDIR=$(TARGET_DIR) install
 endef
 
 # DIESE ZEILE HAT GEFEHLT - sie registriert das Paket in Buildroot
