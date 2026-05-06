@@ -2,7 +2,7 @@ if [ ! -e buildroot ]; then
   if [ ! -e buildroot-2025.02.13.tar.xz ]; then
      wget --no-check-certificate http://buildroot.org/downloads/buildroot-2025.02.13.tar.xz
   fi
-  tar xf buildroot-2025.02.13.tar.bz2
+  tar xf buildroot-2025.02.13.tar.xz
   mv buildroot-2025.02.13 buildroot
 fi
 
