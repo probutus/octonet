@@ -55,7 +55,7 @@ HOST_PYTHON2_CONF_ENV += \
 # MAKE1 has shown to workaround the problem.
 HOST_PYTHON2_MAKE = $(MAKE1)
 
-PYTHON2_DEPENDENCIES = host-python2 libffi $(TARGET_NLS_DEPENDENCIES)
+PYTHON2_DEPENDENCIES = host-python2 libffi ncurses $(TARGET_NLS_DEPENDENCIES)
 
 HOST_PYTHON2_DEPENDENCIES = host-expat host-libffi host-zlib
 

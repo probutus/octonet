@@ -6,9 +6,24 @@ DVB_APPS_TBS_INSTALL_STAGING = YES
 # Wichtig: Die CFLAGS müssen auch die Pfade innerhalb des Quellcodes kennen
 DVB_APPS_TBS_MAKE_OPTS = $(TARGET_CONFIGURE_OPTS) CFLAGS="$(TARGET_CFLAGS) -I$(@D)/lib -DLOG_LEVEL=3 -DERROR=1"
 
+DVB_APPS_TBS_INTERNAL_LIBS = \
+    -L$(@D)/lib/libdvbapi \
+    -L$(@D)/lib/libucsi \
+    -L$(@D)/lib/libdvbcfg \
+    -L$(@D)/lib/libdvben50221 \
+    -L$(@D)/lib/libdvbsec \
+    -L$(@D)/lib/libesg
+
+DVB_APPS_TBS_EXTRA_OPTS = \
+    CFLAGS="$(TARGET_CFLAGS) -I$(@D)/lib" \
+    LDFLAGS="$(TARGET_LDFLAGS) -L$(@D)/lib/libdvbapi -L$(@D)/lib/libucsi -L$(@D)/lib/libdvbcfg -L$(@D)/lib/libdvben50221 -L$(@D)/lib/libdvbsec -L$(@D)/lib/libesg"
+
 define DVB_APPS_TBS_BUILD_CMDS
-	$(TARGET_MAKE_ENV) $(MAKE) -C $(@D) $(DVB_APPS_TBS_MAKE_OPTS) \
-		PERL="perl -I."
+	$(TARGET_MAKE_ENV) $(MAKE1) -C $(@D) \
+		CC="$(TARGET_CC)" \
+		LD="$(TARGET_CC)" \
+		CFLAGS="$(TARGET_CFLAGS) -I$(@D)/lib" \
+		LDFLAGS="$(TARGET_LDFLAGS) -L$(@D)/lib/libdvbapi -L$(@D)/lib/libucsi -L$(@D)/lib/libdvbcfg -L$(@D)/lib/libdvben50221 -L$(@D)/lib/libdvbsec -L$(@D)/lib/libesg"
 endef
 
 define DVB_APPS_TBS_INSTALL_STAGING_CMDS

@@ -1,6 +1,7 @@
 config BR2_PACKAGE_MINISATIP
-    bool "minisatip"
-    help
-      minisatip is a lightweight SAT>IP server.
+	bool "minisatip"
+	select BR2_PACKAGE_LIBBACKTRACE  # <--- Das zwingt Buildroot, libbacktrace zu bauen
+	select BR2_PACKAGE_OPENSSL       # <--- Das sorgt für openssl
+	help
+	  Minisatip is a multi-threaded SAT>IP server.
 
-      https://github.com
