@@ -6,13 +6,4 @@ if [ ! -e buildroot ]; then
   mv buildroot-2025.02.13 buildroot
 fi
 
-if [ ! -e u-boot ]; then
-  if [ ! -e u-boot-2014.07.tar.bz2 ]; then
-     wget ftp://ftp.denx.de/pub/u-boot/u-boot-2014.07.tar.bz2
-  fi
-  tar xf u-boot-2014.07.tar.bz2
-  mv u-boot-2014.07 u-boot
-  patch -d u-boot -p1 < u-boot.patch
-fi
-
 
