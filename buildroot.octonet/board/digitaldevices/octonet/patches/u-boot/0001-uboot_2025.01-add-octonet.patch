@@ -1,0 +1,426 @@
+diff -Naur u-boot-2025.01/arch/arm/mach-at91/Kconfig uboot-2025.01/arch/arm/mach-at91/Kconfig
+--- u-boot-2025.01/arch/arm/mach-at91/Kconfig	2026-05-08 16:36:28.019899650 +0200
++++ uboot-2025.01/arch/arm/mach-at91/Kconfig	2026-05-08 00:06:19.389600044 +0200
+@@ -113,6 +113,14 @@
+ 	select BOARD_EARLY_INIT_F
+ 	select SUPPORT_SPL
+ 
++config TARGET_OCTONET
++	bool "Support Octonet"
++	select BOARD_EARLY_INIT_F
++	select CPU_ARM926EJS
++	select AT91SAM9G45
++	select BOARD_EARLY_INIT_F
++	select CPU_ARM926EJS
++
+ config TARGET_PM9G45
+ 	bool "Ronetix pm9g45 board"
+ 	select AT91SAM9G45
+@@ -346,6 +354,7 @@
+ source "board/atmel/at91sam9261ek/Kconfig"
+ source "board/atmel/at91sam9263ek/Kconfig"
+ source "board/atmel/at91sam9m10g45ek/Kconfig"
++source "board/digitaldevices/octonet/Kconfig"
+ source "board/atmel/at91sam9n12ek/Kconfig"
+ source "board/atmel/at91sam9rlek/Kconfig"
+ source "board/atmel/at91sam9x5ek/Kconfig"
+diff -Naur u-boot-2025.01/board/digitaldevices/octonet/Kconfig uboot-2025.01/board/digitaldevices/octonet/Kconfig
+--- u-boot-2025.01/board/digitaldevices/octonet/Kconfig	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/board/digitaldevices/octonet/Kconfig	2026-05-08 07:49:19.624338748 +0200
+@@ -0,0 +1,12 @@
++if TARGET_OCTONET
++
++config SYS_BOARD
++	default "octonet"
++
++config SYS_VENDOR
++	default "digitaldevices"
++
++config SYS_CONFIG_NAME
++	default "octonet"
++
++endif
+diff -Naur u-boot-2025.01/board/digitaldevices/octonet/MAINTAINERS uboot-2025.01/board/digitaldevices/octonet/MAINTAINERS
+--- u-boot-2025.01/board/digitaldevices/octonet/MAINTAINERS	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/board/digitaldevices/octonet/MAINTAINERS	2026-05-07 23:36:21.729662634 +0200
+@@ -0,0 +1,7 @@
++AT91SAM9M10G45EK BOARD
++M:	Eugen Hristev <eugen.hristev@microchip.com>
++S:	Maintained
++F:	board/atmel/at91sam9m10g45ek/
++F:	include/configs/at91sam9m10g45ek.h
++F:	configs/at91sam9m10g45ek_mmc_defconfig
++F:	configs/at91sam9m10g45ek_nandflash_defconfig
+diff -Naur u-boot-2025.01/board/digitaldevices/octonet/Makefile uboot-2025.01/board/digitaldevices/octonet/Makefile
+--- u-boot-2025.01/board/digitaldevices/octonet/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/board/digitaldevices/octonet/Makefile	2026-05-08 07:34:06.655886831 +0200
+@@ -0,0 +1,10 @@
++# SPDX-License-Identifier: GPL-2.0+
++#
++# (C) Copyright 2003-2008
++# Wolfgang Denk, DENX Software Engineering, wd@denx.de.
++#
++# (C) Copyright 2008
++# Stelian Pop <stelian@popies.net>
++# Lead Tech Design <www.leadtechdesign.com>
++
++obj-y += octonet.o
+diff -Naur u-boot-2025.01/board/digitaldevices/octonet/octonet.c uboot-2025.01/board/digitaldevices/octonet/octonet.c
+--- u-boot-2025.01/board/digitaldevices/octonet/octonet.c	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/board/digitaldevices/octonet/octonet.c	2026-05-08 08:10:58.195834469 +0200
+@@ -0,0 +1,232 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Adaptation for Octonet Board based on naxy400.c Legacy Port
++ */
++// Entferne: #include <common.h>
++
++#include <config.h>
++#include <init.h>
++#include <net.h>
++#include <netdev.h>
++#include <vsprintf.h>
++#include <display_options.h>
++#include <env.h>
++#include <search.h>
++#include <linux/ctype.h>
++#include <asm/global_data.h>
++#include <init.h>
++#include <net.h>
++#include <netdev.h>
++#include <asm/io.h>
++#include <asm/arch/clk.h>
++#include <asm/arch/at91sam9g45_matrix.h>
++#include <asm/arch/at91sam9_smc.h>
++#include <asm/arch/at91_common.h>
++#include <asm/arch/at91_pmc.h>
++#include <asm/arch/at91_rstc.h>
++#include <asm/arch/at91_pio.h>
++#include <asm/arch/gpio.h>
++#include <asm/mach-types.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++/* --- NAND Hardware Initialisierung --- */
++void at91octonet_nand_hw_init(void)
++{
++	struct at91_smc *smc = (struct at91_smc *)ATMEL_BASE_SMC;
++	struct at91_matrix *matrix = (struct at91_matrix *)ATMEL_BASE_MATRIX;
++	unsigned long csa;
++
++	/* Enable CS3 für NAND */
++	csa = readl(&matrix->ebicsa);
++	csa |= AT91_MATRIX_EBI_CS3A_SMC_SMARTMEDIA;
++	writel(csa, &matrix->ebicsa);
++
++	/* Configure SMC CS3 for NAND/SmartMedia */
++	writel(AT91_SMC_SETUP_NWE(1) | AT91_SMC_SETUP_NCS_WR(0) |
++	       AT91_SMC_SETUP_NRD(1) | AT91_SMC_SETUP_NCS_RD(0),
++	       &smc->cs[3].setup);
++	writel(AT91_SMC_PULSE_NWE(4) | AT91_SMC_PULSE_NCS_WR(3) |
++	       AT91_SMC_PULSE_NRD(3) | AT91_SMC_PULSE_NCS_RD(2),
++	       &smc->cs[3].pulse);
++	writel(AT91_SMC_CYCLE_NWE(7) | AT91_SMC_CYCLE_NRD(4),
++	       &smc->cs[3].cycle);
++	writel(AT91_SMC_MODE_RM_NRD | AT91_SMC_MODE_WM_NWE |
++	       AT91_SMC_MODE_EXNW_DISABLE | AT91_SMC_MODE_DBW_8 |
++	       AT91_SMC_MODE_TDF_CYCLE(3),
++	       &smc->cs[3].mode);
++
++	at91_periph_clk_enable(ATMEL_ID_PIOC);
++
++	/* NAND Ready/Busy und Enable Pins konfigurieren */
++	at91_set_gpio_input(CFG_SYS_NAND_READY_PIN, 1);
++	at91_set_gpio_output(CFG_SYS_NAND_ENABLE_PIN, 1);
++}
++
++/* --- Ethernet (MACB) Hardware Initialisierung --- */
++void at91octonet_macb_hw_init(void)
++{
++	at91_periph_clk_enable(ATMEL_ID_EMAC);
++
++	/* Pin-Muxing für Port A (EMAC Pins) */
++	at91_set_a_periph(AT91_PIO_PORTA, 10, 0);	/* ETXCK_EREFCK */
++	at91_set_a_periph(AT91_PIO_PORTA, 11, 0);	/* ERXDV */
++	at91_set_a_periph(AT91_PIO_PORTA, 12, 0);	/* ERX0 */
++	at91_set_a_periph(AT91_PIO_PORTA, 13, 0);	/* ERX1 */
++	at91_set_a_periph(AT91_PIO_PORTA, 14, 0);	/* ERXER */
++	at91_set_a_periph(AT91_PIO_PORTA, 15, 0);	/* ETXEN */
++	at91_set_a_periph(AT91_PIO_PORTA, 16, 0);	/* ETX0 */
++	at91_set_a_periph(AT91_PIO_PORTA, 17, 0);	/* ETX1 */
++	at91_set_a_periph(AT91_PIO_PORTA, 18, 0);	/* EMDIO */
++	at91_set_a_periph(AT91_PIO_PORTA, 19, 0);	/* EMDC */
++
++#ifndef CONFIG_RMII
++	/* Zusätzliche Pins für MII-Modus */
++	at91_set_a_periph(AT91_PIO_PORTA, 20, 0);	/* ETX2 */
++	at91_set_a_periph(AT91_PIO_PORTA, 21, 0);	/* ETX3 */
++	at91_set_a_periph(AT91_PIO_PORTA, 22, 0);	/* ETXER */
++	at91_set_a_periph(AT91_PIO_PORTA, 23, 0);	/* ERX2 */
++	at91_set_a_periph(AT91_PIO_PORTA, 24, 0);	/* ERX3 */
++	at91_set_a_periph(AT91_PIO_PORTA, 25, 0);	/* ERXCK */
++	at91_set_a_periph(AT91_PIO_PORTA, 26, 0);	/* ECOL */
++	at91_set_a_periph(AT91_PIO_PORTA, 27, 0);	/* ECRS */
++#endif
++}
++
++/* In board/digitaldevices/octonet/octonet.c */
++
++void board_debug_uart_init(void)
++{
++    /* Pin-Initialisierung für die Konsole (Port B 18/19) */
++    at91_set_a_periph(AT91_PIO_PORTB, 19, 1);    /* TXD0 */
++    at91_set_a_periph(AT91_PIO_PORTB, 18, 0);    /* RXD0 */
++    
++    /* Takt für die Konsole (System Clock) aktivieren */
++    at91_periph_clk_enable(ATMEL_ID_SYS);
++}
++
++
++/* ------------------------------------------------------------------------- */
++/* FPGA Initialisierung (CS0 & CS2)                                          */
++/* ------------------------------------------------------------------------- */
++void octonet_fpga_init(void)
++{
++	struct at91_smc *smc = (struct at91_smc *)ATMEL_BASE_SMC;
++	struct at91_pmc *pmc = (struct at91_pmc *)ATMEL_BASE_PMC;
++	u32 hw, reg;
++
++	/* CS0 Setup */
++	writel(0x00000000, &smc->cs[0].setup);
++	writel(0x09090909, &smc->cs[0].pulse);
++	writel(0x000b000b, &smc->cs[0].cycle);
++	writel(0x10001000, &smc->cs[0].mode);
++
++	/* CS2 Setup */
++	writel(0x00000000, &smc->cs[2].setup);
++	writel(0x09090909, &smc->cs[2].pulse);
++	writel(0x000b000b, &smc->cs[2].cycle);
++	writel(0x10001000, &smc->cs[2].mode);
++
++	/* PDR Initialisierung (Direktzugriff laut PDF) */
++	writel(0x00002000, 0xfffff604);
++
++	hw = readl(ATMEL_BASE_CS2);
++	reg = readl(ATMEL_BASE_CS2 + 4);
++	printf("FPGA: HW=%08x, REG=%08x\n", hw, reg);
++
++	/* Disable MDIO, IRQ, ether output */
++	writel(0, (void *)(ATMEL_BASE_CS2 + 0x20));
++	writel(0, (void *)(ATMEL_BASE_CS2 + 0x100));
++
++	at91_set_a_periph(AT91_PIO_PORTD, 26, 0);
++	writel(0x00000100, &pmc->pck[0]);
++	writel(AT91_PMC_PCK0, &pmc->scer);
++
++	at91_set_gpio_output(AT91_PIN_PD11, 1);
++	at91_set_gpio_output(AT91_PIN_PD10, 1);
++	at91_set_gpio_output(AT91_PIN_PD12, 1);
++}
++
++/* ------------------------------------------------------------------------- */
++/* MAC-Adresse aus FPGA lesen                                                */
++/* ------------------------------------------------------------------------- */
++void setmac(void)
++{
++	unsigned char mac[6];
++	u32 macreg = readl((void *)(ATMEL_BASE_CS2 + 12));
++
++	if (eth_env_get_enetaddr("ethaddr", mac))
++		return;
++
++	if ((macreg & 0xff) == 1) {
++		mac[0] = 0x54;
++		mac[1] = 0x84;
++		mac[2] = 0x7b;
++		mac[3] = (macreg >> 8) & 0xff;
++		mac[4] = (macreg >> 16) & 0xff;
++		mac[5] = (macreg >> 24) & 0xff;
++
++		eth_env_set_enetaddr("ethaddr", mac);
++	}
++}
++
++int misc_init_r(void)
++{
++	setmac();
++	return 0;
++}
++void at91octonet_debug_uart_init(void)
++{
++	/* Pins für DBGU (UART): Port B 18 (RX) und 19 (TX) */
++	at91_set_a_periph(AT91_PIO_PORTB, 19, 1); /* TXD0 */
++	at91_set_a_periph(AT91_PIO_PORTB, 18, 0); /* RXD0 */
++    
++	/* Takt für die Konsole aktivieren */
++	at91_periph_clk_enable(ATMEL_ID_SYS);
++}
++#ifdef CONFIG_RESET_PHY_R
++void reset_phy(void)
++{
++	/* Hier könnte ein GPIO-Reset für den LAN-Chip stehen */
++}
++#endif
++
++/* ------------------------------------------------------------------------- */
++/* Board Init                                                                */
++/* ------------------------------------------------------------------------- */
++int board_early_init_f(void)
++{
++	at91octonet_debug_uart_init();
++	return 0;
++}
++
++int board_init(void)
++{
++	/* bi_arch_number entsprechend naxy400 PDF */
++	gd->bd->bi_arch_number = MACH_TYPE_NAXY400; 
++	gd->bd->bi_boot_params = CFG_SYS_SDRAM_BASE + 0x100;
++
++#ifdef CONFIG_CMD_NAND
++	at91octonet_nand_hw_init();
++#endif
++#ifdef CONFIG_MACB
++	at91octonet_macb_hw_init();
++#endif
++	
++	octonet_fpga_init();
++	return 0;
++}
++
++int dram_init(void)
++{
++	gd->ram_size = get_ram_size((void *)CFG_SYS_SDRAM_BASE, CFG_SYS_SDRAM_SIZE);
++	return 0;
++}
++
++#ifdef CONFIG_MACB
++int board_eth_init(struct bd_info *bis)
++{
++	return macb_eth_initialize(0, (void *)ATMEL_BASE_EMAC, 0x00);
++}
++#endif
++
+diff -Naur u-boot-2025.01/configs/octonet_defconfig uboot-2025.01/configs/octonet_defconfig
+--- u-boot-2025.01/configs/octonet_defconfig	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/configs/octonet_defconfig	2026-05-07 23:58:47.098069970 +0200
+@@ -0,0 +1,67 @@
++CONFIG_ARM=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_ARCH_AT91=y
++CONFIG_TEXT_BASE=0x73f00000
++CONFIG_SYS_MALLOC_LEN=0x80000
++CONFIG_TARGET_OCTONET=y
++CONFIG_ATMEL_LEGACY=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_HAS_CUSTOM_SYS_INIT_SP_ADDR=y
++CONFIG_CUSTOM_SYS_INIT_SP_ADDR=0x70003f00
++CONFIG_DM_GPIO=y
++CONFIG_DEFAULT_DEVICE_TREE="at91-octonet"
++CONFIG_SYS_MONITOR_LEN=524288
++CONFIG_SYS_LOAD_ADDR=0x72000000
++CONFIG_DEBUG_UART_BASE=0xffffee00
++CONFIG_DEBUG_UART_CLOCK=132000000
++CONFIG_DEBUG_UART_BOARD_INIT=y
++CONFIG_ENV_OFFSET_REDUND=0x100000
++CONFIG_DEBUG_UART=y
++CONFIG_NAND_BOOT=y
++CONFIG_BOOTDELAY=3
++CONFIG_USE_BOOTARGS=y
++CONFIG_BOOTARGS="console=ttyS0,115200 earlyprintk"
++CONFIG_USE_BOOTCOMMAND=y
++CONFIG_BOOTCOMMAND="nand read 0x70000000 0x200000 0x300000;bootm 0x70000000"
++CONFIG_SYS_CBSIZE=256
++CONFIG_SYS_PBSIZE=281
++CONFIG_SYS_CONSOLE_IS_IN_ENV=y
++CONFIG_MISC_INIT_R=y
++CONFIG_BOARD_EARLY_INIT_F=y
++# CONFIG_DISPLAY_BOARDINFO is not set
++CONFIG_RESET_PHY_R=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="U-Boot 2025.02> "
++# CONFIG_CMD_BDI is not set
++CONFIG_CMD_BOOTZ=y
++# CONFIG_CMD_IMI is not set
++# CONFIG_CMD_LOADS is not set
++# CONFIG_CMD_MMC=y
++CONFIG_CMD_NAND=y
++CONFIG_CMD_USB=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_BOOTP_BOOTFILESIZE=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_FAT=y
++CONFIG_OF_CONTROL=y
++CONFIG_ENV_IS_IN_NAND=y
++CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_CLK=y
++CONFIG_CLK_AT91=y
++CONFIG_AT91_GPIO=y
++CONFIG_GENERIC_ATMEL_MCI=y
++CONFIG_MTD=y
++CONFIG_NAND_ATMEL=y
++CONFIG_MACB=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_AT91=y
++CONFIG_DM_SERIAL=y
++CONFIG_DEBUG_UART_ANNOUNCE=y
++CONFIG_ATMEL_USART=y
++CONFIG_TIMER=y
++CONFIG_ATMEL_PIT_TIMER=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_STORAGE=y
+diff -Naur u-boot-2025.01/include/configs/octonet.h uboot-2025.01/include/configs/octonet.h
+--- u-boot-2025.01/include/configs/octonet.h	1970-01-01 01:00:00.000000000 +0100
++++ uboot-2025.01/include/configs/octonet.h	2026-05-08 10:13:32.725331772 +0200
+@@ -0,0 +1,48 @@
++#ifndef __OCTONET_CONFIG_H
++#define __OCTONET_CONFIG_H
++
++#include <linux/sizes.h>
++
++/* --- 1. Taktfrequenzen (behebt deine aktuellen Fehler) --- */
++#define CFG_SYS_AT91_SLOW_CLOCK      32768
++#define CFG_SYS_AT91_MAIN_CLOCK      12000000
++
++/* --- 2. Speicher-Layout (DRAM) --- */
++#define CFG_SYS_SDRAM_BASE           0x70000000
++#define CFG_SYS_SDRAM_SIZE           SZ_64M
++
++/* --- 3. Initial Stack & RAM (Wichtig für den frühen Boot) --- */
++#define CFG_SYS_INIT_RAM_ADDR        0x00300000 /* Internes SRAM */
++#define CFG_SYS_INIT_RAM_SIZE        SZ_16K
++#define CFG_SYS_INIT_SP_ADDR         (CFG_SYS_INIT_RAM_ADDR + CFG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
++
++/* Serielle Konsole (Legacy Mode ohne DM) */
++#define CFG_USART_BASE       0xffffee00  /* Basisadresse DBGU beim SAM9G45 */
++#define CFG_USART_ID         1           /* Peripherie ID für DBGU/System */
++
++/* Workaround für den Namensfehler im U-Boot 2025.01 Atmel-Treiber */
++#define _atmel_serial_init(usart, clock, baud) do { } while (0)
++
++/* --- 4. NAND Flash Konfiguration --- */
++#ifdef CONFIG_CMD_NAND
++#define CFG_SYS_MAX_NAND_DEVICE      1
++#define CFG_SYS_NAND_BASE            0x40000000
++#define CFG_SYS_NAND_DBW8            1
++/* Diese Pins müssen zu deiner Hardware passen */
++#define CFG_SYS_NAND_READY_PIN       AT91_PIN_PC8
++#define CFG_SYS_NAND_ENABLE_PIN      AT91_PIN_PC14
++
++/* Adress-Leitungen für Command und Address Latch */
++/* ALE an AD21, CLE an AD22 ist Standard für SAM9G45 */
++#define CFG_SYS_NAND_MASK_ALE        (1 << 21)
++#define CFG_SYS_NAND_MASK_CLE        (1 << 22)
++#endif
++
++/* --- 5. Bootloader-Umgebung (Standard-Bootbefehl) --- */
++/* Wird oft schon via Kconfig gesetzt, kann hier aber überschrieben werden */
++#define CFG_BOOTCOMMAND \
++	"nand read 0x70000000 0x200000 0x500000; " \
++	"bootm 0x70000000"
++
++#endif /* __OCTONET_CONFIG_H */
++
