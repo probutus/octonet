@@ -1,0 +1,12 @@
+diff -Naur dddvb-0.9.41.orig/include/linux/dvb/frontend.h dddvb-0.9.41/include/linux/dvb/frontend.h
+--- dddvb-0.9.41.orig/include/linux/dvb/frontend.h	2026-05-09 00:13:02.893607072 +0200
++++ dddvb-0.9.41/include/linux/dvb/frontend.h	2026-05-09 00:11:35.889954661 +0200
+@@ -912,7 +912,7 @@
+ 	__u32 reserved[3];
+ 	union {
+ 		__u32 data;
+-		__u64 data64; 
++		__u64 data64 __attribute__((packed)); 
+ 		struct dtv_fe_stats st;
+ 		struct {
+ 			__u8 data[32];
