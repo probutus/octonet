@@ -1,0 +1,50 @@
+diff -Naur octoscan-0.1.orig/octoscan.c octoscan-0.1/octoscan.c
+--- octoscan-0.1.orig/octoscan.c	2026-05-16 14:42:48.045693273 +0200
++++ octoscan-0.1/octoscan.c	2026-05-17 15:48:37.950884161 +0200
+@@ -2007,22 +2007,30 @@
+ 	int rbuf = 1024 * 1024;
+ 
+ 	scon->seq = 0;
+-	scon->usock = udpsock(&sadr, "0");
+-	if (scon->usock < 0) {
+-		fprintf(stderr, "Could not get UDP socket\n");
+-		return -1;
+-	}
+-	//setsockopt(usock, SOL_SOCKET, SO_RCVBUF, &rbuf, sizeof(rbuf));
+-	scon->nsport = 0;//strtoul(sport, NULL, 10);
+-	if (scon->nsport == 0) {
+-		struct sockaddr_in sin;
+-		socklen_t len = sizeof(sin);
+-		getsockname(scon->usock, (struct sockaddr*) &sin, &len);
+-		scon->nsport = ntohs(sin.sin_port);
+-	}
+-	//fprintf(stderr, "Socket port = %u\n", scon->nsport);
+-	//fprintf(stderr, "host = %s, port = %s\n", scon->host, scon->port);
+-
++        while (1) {
++                scon->usock = udpsock(&sadr, "0"); // Nutzt die originale Funktion inkl. bind()
++                if (scon->usock < 0) {
++                        fprintf(stderr, "Could not get UDP socket\n");
++                        return -1;
++                }
++                
++                // Puffer hochsetzen gegen Paketverlust
++                setsockopt(scon->usock, SOL_SOCKET, SO_RCVBUF, &rbuf, sizeof(rbuf));
++
++                // Port auslesen
++                struct sockaddr_in sin;
++                socklen_t len = sizeof(sin);
++                getsockname(scon->usock, (struct sockaddr*) &sin, &len);
++                scon->nsport = ntohs(sin.sin_port);
++
++                // Wenn der Port GERADE ist, erfüllen wir die SAT>IP-Spec -> Schleife verlassen!
++                if (scon->nsport % 2 == 0) {
++                        break; 
++                }
++
++                // Wenn der Port ungerade war, schließen wir ihn und würfeln in der Schleife neu
++                close(scon->usock);
++        }
+ 	scon->sock = streamsock(scon->host, scon->port, &sadr);
+ 	if (scon->sock < 0)
+ 		return scon->sock;
