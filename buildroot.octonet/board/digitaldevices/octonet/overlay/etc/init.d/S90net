@@ -9,7 +9,12 @@ case "$1" in
 	    route add default gw $GATEWAY
 	    /etc/init.d/S99octo startoctoserve
 	else
-            udhcpc -s /etc/network/udhcpc.script -b -T 4 -A 300
+            if grep -q "root=/dev/nfs" /proc/cmdline || grep -q "nfsroot=" /proc/cmdline; then
+               echo "booting via NFS, skipping network init"
+            else
+               udhcpc -s /etc/network/udhcpc.script -b -T 4 -A 300
+            fi
+	    /etc/init.d/S99octo restartoctoserve
 	fi
 	export LUA_PATH="/var/channels/?.lua;;"
         httpd -h /var/www -c /etc/httpd.conf
