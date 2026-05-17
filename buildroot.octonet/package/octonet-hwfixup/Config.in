@@ -1,0 +1,9 @@
+config BR2_PACKAGE_OCTONET_HWFIXUP
+	bool "octonet-hwfixup"
+	depends on BR2_LINUX_KERNEL
+	help
+	  Late low-level hardware fixup for Octonet AT91SAM9G45 boards.
+
+comment "octonet-hw-fix needs a Linux kernel to be built"
+	depends on !BR2_LINUX_KERNEL
+
