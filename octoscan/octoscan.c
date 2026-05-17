@@ -2007,22 +2007,30 @@ static int scan_tp(struct scantp *stp)
 	int rbuf = 1024 * 1024;
 
 	scon->seq = 0;
-	scon->usock = udpsock(&sadr, "0");
-	if (scon->usock < 0) {
-		fprintf(stderr, "Could not get UDP socket\n");
-		return -1;
-	}
-	//setsockopt(usock, SOL_SOCKET, SO_RCVBUF, &rbuf, sizeof(rbuf));
-	scon->nsport = 0;//strtoul(sport, NULL, 10);
-	if (scon->nsport == 0) {
-		struct sockaddr_in sin;
-		socklen_t len = sizeof(sin);
-		getsockname(scon->usock, (struct sockaddr*) &sin, &len);
-		scon->nsport = ntohs(sin.sin_port);
-	}
-	//fprintf(stderr, "Socket port = %u\n", scon->nsport);
-	//fprintf(stderr, "host = %s, port = %s\n", scon->host, scon->port);
+        while (1) {
+                scon->usock = udpsock(&sadr, "0"); // Nutzt die originale Funktion inkl. bind()
+                if (scon->usock < 0) {
+                        fprintf(stderr, "Could not get UDP socket\n");
+                        return -1;
+                }
+                
+                // Puffer hochsetzen gegen Paketverlust
+                setsockopt(scon->usock, SOL_SOCKET, SO_RCVBUF, &rbuf, sizeof(rbuf));
 
+                // Port auslesen
+                struct sockaddr_in sin;
+                socklen_t len = sizeof(sin);
+                getsockname(scon->usock, (struct sockaddr*) &sin, &len);
+                scon->nsport = ntohs(sin.sin_port);
+
+                // Wenn der Port GERADE ist, erfüllen wir die SAT>IP-Spec -> Schleife verlassen!
+                if (scon->nsport % 2 == 0) {
+                        break; 
+                }
+
+                // Wenn der Port ungerade war, schließen wir ihn und würfeln in der Schleife neu
+                close(scon->usock);
+        }
 	scon->sock = streamsock(scon->host, scon->port, &sadr);
 	if (scon->sock < 0)
 		return scon->sock;
