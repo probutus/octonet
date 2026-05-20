@@ -1,24 +1,6 @@
 /dts-v1/;
-#ifndef __ASSEMBLY__
 #include "microchip/at91sam9g45.dtsi"
-#else 
-#include "at91sam9g45.dtsi"
-  /* Wir nutzen die Token-Concatenation, um das Label für U-Boot 
-     syntaktisch zu entwerten, ohne das Wort clk32k zu zerstören */
-  #define clk32k_unused_label clk32k
-  #undef clk32k
-  /* Wir definieren clk32k als ein Makro, das sich selbst mit einem 
-     Suffix versieht, aber NUR wenn es kein & davor hat. 
-     Da das schwierig ist, nehmen wir die radikale Methode: */
-  #define clk32k clk32k
 
-  #ifndef PMC_TYPE_CORE
-    #define PMC_TYPE_CORE 0
-    #define PMC_MCK 1
-    #define PMC_TYPE_SYSTEM 0
-    #define PMC_TYPE_PERIPHERAL 1
-  #endif
-#endif
 / {
 	model = "Digital Devices OctopusNet";
         compatible = "digitaldevices,octonet", "atmel,at91sam9m10g45", "atmel,at91sam9g45", "atmel,at91sam9";
@@ -61,7 +43,7 @@
 	ahb {
 
 		apb {
-/*			
+			/* Serielle Konsole - nutzt Label dbgu_serial */
         		dbgu_serial: serial@ffffee00 {
                                 compatible = "atmel,at91sam9260-usart";
                                 reg = <0xffffee00 0x200>;
@@ -69,14 +51,11 @@
                                 interrupts = <1 4 7>;
 				status = "okay";
 		        };
-*/
-                        dbgu_serial: serial@ffffee00 {
-                                compatible = "atmel,at91sam9260-dbgu", "atmel,at91sam9260-usart";
-                                reg = <0xffffee00 0x200>;
-                                interrupts = <1 4 7>;
-                                clocks = <&pmc 0 1>; /* PMC_TYPE_CORE (0) und ID (1) */
-                                clock-names = "usart";
-                                u-boot,dm-pre-reloc; /* Wichtig für die frühe Konsole */
+                        clk32k: clock-controller@fffffd50 {
+                                compatible = "atmel,at91sam9x5-sckc";
+                                reg = <0xfffffd50 0x4>;
+                                clocks = <&slow_xtal>;
+                                #clock-cells = <0>;
                                 status = "okay";
                         };
                         rst0: reset-controller@fffffd00 {
@@ -300,19 +279,5 @@
 &usb1 {
      status = "okay";
 };
-/* GANZ AM ENDE der Datei */
-#ifdef __ASSEMBLY__
-  /* Jetzt definieren wir für U-Boot das Label 'clk32k' neu, 
-     damit alle &clk32k Referenzen ein Ziel haben */
-  &{/ahb/apb/sckc@fffffd50/slck} {
-    label = "clk32k";
-  };
 
-  /* Dasselbe für matrix */
-  / {
-    matrix: matrix@ffffea00 {
-        compatible = "atmel,at91sam9g45-matrix", "syscon";
-        reg = <0xffffea00 0x200>;
-    };
-  };
-#endif
+
