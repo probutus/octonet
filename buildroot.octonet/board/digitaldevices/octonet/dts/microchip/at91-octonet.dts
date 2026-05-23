@@ -100,11 +100,15 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&pinctrl_macb0_mii_custom>;
 				status = "okay";
+                                jumbo-max-frame-size = <2048>; 
                                 fixed-link {
                                     speed = <100>;
                                     full-duplex;
                                 };
-                                /delete-node/ mdio;
+                                mdio {
+                                        #address-cells = <1>;
+                                        #size-cells = <0>;
+                                };
 			};
 			pinctrl@fffff200 {
 				#address-cells = <1>;
