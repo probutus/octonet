@@ -1,5 +1,5 @@
 /dts-v1/;
-#include "microchip/at91sam9g45.dtsi"
+#include "at91sam9g45.dtsi"
 
 / {
 	model = "Digital Devices OctopusNet";
