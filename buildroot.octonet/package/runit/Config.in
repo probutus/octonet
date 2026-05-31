@@ -1,9 +1,0 @@
-config BR2_PACKAGE_RUNIT
-	bool "runit"
-	depends on BR2_USE_MMU # fork()
-	help
-	  runit is a cross-platform Unix init scheme with service 
-	  supervision.
-
-	  http://smarden.org
-

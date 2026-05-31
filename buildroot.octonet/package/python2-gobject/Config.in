@@ -1,7 +1,0 @@
-config BR2_PACKAGE_PYTHON2_GOBJECT
-    bool "python2-gobject"
-    depends on BR2_PACKAGE_PYTHON2
-    select BR2_PACKAGE_LIBGLIB2
-    help
-      Python bindings for the GLib/GObject library.
-
