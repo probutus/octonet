@@ -75,3 +75,6 @@ Note 2: for security reasons only private ip addresses (10.0.0.0/8, 172.16.0.0/1
 You can find details about the OctopusNet hardware, the flash memory map and the boot process
 in dddvb/docs/octopusnet in the dddvb repo!
 
+The root-password for ssh access is "octonet"
+
+The octoupdateserver has reference images included with the date 2105312329 (May 2021, this I put in to keep updatability to official firmware 2.2.0). The firmware can be easily reverted by removing the file /config/updateserver and click "check for update" this will trigger the original update repository and you can easily go back to firmware 2.2.0
