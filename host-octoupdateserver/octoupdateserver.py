@@ -7,7 +7,7 @@ import os
 # configuration
 PORT = 80
 # add name of new image file
-FILENAME = "octonet.2105312329.img"
+FILENAME = "octonet.2211010000.img"
 
 class OctopusUpdateHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
