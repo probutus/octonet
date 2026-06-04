@@ -1,0 +1,10 @@
+config BR2_PACKAGE_OSCAM
+	bool "oscam"
+	select BR2_PACKAGE_OPENSSL
+	select BR2_PACKAGE_LIBUSB if BR2_PACKAGE_HAS_UDEV
+	help
+	  OSCam is an Open Source Conditional Access Module software,
+	  a versatile cardserver and softcam utility.
+
+	  https://git.streamboard.tv/common/oscam
+

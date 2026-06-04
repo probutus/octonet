@@ -4,5 +4,6 @@ source "$BR2_EXTERNAL_OCTONET_PATH/package/lunajson/Config.in"
 source "$BR2_EXTERNAL_OCTONET_PATH/package/dddvb/Config.in"
 source "$BR2_EXTERNAL_OCTONET_PATH/package/dvb-apps-tbs/Config.in"
 source "$BR2_EXTERNAL_OCTONET_PATH/package/minisatip/Config.in"
+source "$BR2_EXTERNAL_OCTONET_PATH/package/oscam/Config.in"
 source "$BR2_EXTERNAL_OCTONET_PATH/package/octonet-hwfixup/Config.in"
 
