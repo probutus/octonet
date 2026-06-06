@@ -1,0 +1,56 @@
+#!/bin/sh
+NAME=lighttpd
+DAEMON=/usr/sbin/$NAME
+PID_FILE="/var/run/$NAME.pid"
+CONF_FILE="/etc/$NAME/$NAME.conf"
+
+CASE_DIR="/etc/lighttpd/certs"
+PEM_FILE="${CASE_DIR}/server.pem"
+
+[ -r /etc/default/$NAME ] && . /etc/default/$NAME
+
+start() {
+    printf "Starting lighttpd: "
+    
+    # Automatisierte First-Boot-Generierung, falls Datei fehlt
+    if [ ! -f "$PEM_FILE" ]; then
+        printf "[Generating SSL Cert] "
+        mkdir -p "$CASE_DIR"
+        
+        # Generiert den Key und das Zertifikat direkt auf der Box
+        openssl req -new -x509 -keyout "$PEM_FILE" -out "$PEM_FILE" \
+                    -days 3650 -nodes \
+                    -subj "/C=DE/O=Octonet/CN=octonet.local" 2>/dev/null
+                    
+        chmod 600 "$PEM_FILE"
+    fi
+
+    if [ ! -f /etc/lighttpd/.htdigest ]; then
+        printf "[Setting Default Password] "
+        echo "admin:Octonet Protected Area:80408af176c6905b900e0341bfacef28" > /etc/lighttpd/.htdigest
+        chmod 600 /etc/lighttpd/.htdigest # Schreibbar für den Webserver zur Ersteinrichtung
+    fi
+
+    start-stop-daemon -S -q -p $PID_FILE --exec $DAEMON -- -f $CONF_FILE
+    [ $? -eq 0 ] && echo "OK" || echo "FAIL"
+}
+
+stop() {
+    printf "Stopping lighttpd: "
+    start-stop-daemon -K -q -p $PID_FILE
+    [ $? -eq 0 ] && echo "OK" || echo "FAIL"
+}
+
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+case "$1" in
+  start)   start ;;
+  stop)    stop ;;
+  restart) restart ;;
+  *)       echo "Usage: $0 {start|stop|restart}"; exit 1 ;;
+esac
+
