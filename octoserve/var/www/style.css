@@ -1,88 +1,792 @@
+/* ==========================================================================
+   1. VARIABLES & DESIGN SYSTEM (Farben, Radien & Schatten)
+   ========================================================================== */
+:root {
+  --bg-color: #f4f6f9;
+  --card-bg: #ffffff;
+  --text-main: #2c3e50;
+  --text-muted: #7f8c8d;
+  --primary-color: #0056b3; /* Digital Devices Blau */
+  --accent-color: #eef2f7;
+  --border-radius: 8px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   2. GLOBAL STYLES & TYPOGRAPHY
+   ========================================================================== */
 body {
-  color:#000000;
-  background-color:#000000;
-  margin:0;
-  font-family:Arial,sans-serif;
+  color: var(--text-main);
+  background-color: var(--bg-color);
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-.maintable {
-  color:#000000;
-  background-color:#FFFFFF;
-  text-align:center;
-  border:0;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.maintd {
-  vertical-align:top;
-}
-
-.menutable {
-  color:#000000;
-  background-color:#e0e0e0;
-  text-align:center;
-  border:5px;
-  width:95%;
-  font-size:120%;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.menucur {
-  color:#e0e0e0;
-  background-color:#000000;
-}
-
-.menutable a:link { text-decoration:none; color:#000000; }
-.menutable a:visited { text-decoration:none; color:#000000; }
-
-
-.center-div {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.content {
-  color:#000000;
-  background-color:#FFFFF0;
-  text-align:left;
-  vertical-align:top;
-  border:5px;
-  font-size:100%;
-}
-
-.table {
-  color:#000000;
-  text-align:center;
-  border:1px;
-}
-
-.tableleft {
-  color:#000000;
-  float:center;
-  text-align:left;
-  border:1px;
-}
-
-#streamstatus {
-  color:#000000;
-  text-align:center;
-  border:1px;
-  width:90%;
-}
-
-td#streamstatus {
-  color:#000000;
-}
-
-#tunerstatus {
-  color:#000000;
-  text-align:center;
-  border:1px;
-  width:60%;
-}
-
+/* Verhindert unschöne Rahmen um verlinkte Bilder (z.B. das Logo) */
 a img {
-  border:none;
+  border: none;
 }
+
+/* ==========================================================================
+   3. APP STRUCTURE & GRID LAYOUT
+   ========================================================================== */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header-Bereich für das Logo */
+.main-header {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Zwei-Spalten-Layout: Navigation links (240px), Inhalt rechts (flexibel) */
+.content-wrapper {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 20px;
+}
+
+/* Mobil-Optimierung für kleinere Bildschirme / Smartphones */
+@media (max-width: 768px) {
+  .content-wrapper {
+    grid-template-columns: 1fr; /* Nav und Inhalt rutschen untereinander */
+  }
+}
+
+/* ==========================================================================
+   4. SIDE NAVIGATION (menu.js Integration)
+   ========================================================================== */
+.side-navigation {
+  background-color: var(--card-bg);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  height: fit-content;
+}
+
+.menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu-list li {
+  margin-bottom: 6px;
+}
+
+.menu-list a, 
+.menu-list .menucur span {
+  display: block;
+  padding: 10px 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+/* Normale, inaktive Menü-Links */
+.menu-list a {
+  color: var(--text-main);
+  background-color: transparent;
+}
+
+/* Hover-Effekt für Links */
+.menu-list a:hover {
+  background-color: var(--accent-color);
+  color: var(--primary-color);
+}
+
+/* Aktiver Menüpunkt (Hervorhebung) */
+.menu-list .menucur span {
+  background-color: var(--primary-color);
+  color: #ffffff;
+  cursor: default;
+}
+
+/* Backup-Kompatibilität für eventuelle alte Tabellen-Menüs */
+.menutable {
+  width: 100% !important;
+  border-collapse: collapse;
+}
+.menutable td { padding: 0; }
+.menutable a { display: block; padding: 10px 15px; color: var(--text-main); text-decoration: none; }
+
+/* ==========================================================================
+   5. MAIN CONTENT & HEADLINES
+   ========================================================================== */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.headline-group {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.headline-group h1 {
+  margin: 0 0 5px 0;
+  font-size: 1.8rem;
+  color: var(--primary-color);
+}
+
+.headline-group h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   6. DASHBOARD CARDS & DATA TABLES
+   ========================================================================== */
+/* Grid für die Info-Karten (Nebeneinander auf Desktop) */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr; /* Karten rutschen auf Tablets untereinander */
+  }
+}
+
+.card {
+  background-color: var(--card-bg);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+}
+
+.card h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 8px;
+  color: var(--text-main);
+}
+
+/* Styling für die dynamisch generierten Info- und Tuner-Tabellen */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table tr {
+  border-bottom: 1px solid var(--accent-color);
+}
+
+.data-table tr:last-child {
+  border-bottom: none;
+}
+
+.data-table td {
+  padding: 10px 6px;
+  font-size: 0.95rem;
+}
+
+/* Linke Spalte (Eigenschafts-Bezeichner) */
+.data-table td:first-child {
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 40%;
+}
+
+/* Rechte Spalte (Dynamische Werte) */
+.data-table td:nth-child(2) {
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+/* --- FORMULAR & BUTTON ELEMENTS --- */
+.full-width {
+  grid-column: 1 / -1; /* Lässt die Card über die volle Breite gehen */
+}
+
+.button-container {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.button-container form {
+  margin: 0;
+}
+
+/* Basis-Styling für alle Submit-Buttons */
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+/* Primärer Button (Blau) */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #004085; /* Etwas dunkleres Blau beim Drüberfahren */
+}
+
+/* Sekundärer Button (Grau für Beta/Alternative) */
+.btn-secondary {
+  background-color: var(--accent-color);
+  color: var(--text-main);
+  border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background-color: #e2e8f0;
+}
+
+/* --- EXTRA UPDATE COMPONENT STYLES --- */
+.text-center-content {
+  text-align: center;
+  max-width: 650px;
+  margin: 40px auto;
+  padding: 40px 30px !important;
+}
+
+.text-danger {
+  color: #dc3545;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.border-danger {
+  border: 2px solid #dc3545 !important;
+  box-shadow: 0 10px 25px rgba(220, 53, 69, 0.15) !important;
+}
+
+.update-warning-icon {
+  font-size: 3.5rem;
+  margin-bottom: 15px;
+}
+
+.update-subtext {
+  color: var(--text-muted);
+  font-size: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.font-bold {
+  font-weight: 600;
+}
+
+.font-large {
+  font-size: 1.1rem;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.margin-bottom {
+  margin-bottom: 15px;
+}
+/* --- EPG COMPONENT STYLES --- */
+.epg-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.epg-controls-card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.epg-search-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.epg-search-row form {
+  flex: 1;
+  margin: 0;
+  min-width: 200px;
+}
+
+.epg-navigation-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.epg-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.epg-event-card {
+  border-left: 4px solid var(--primary-color);
+  padding: 18px 22px !important;
+}
+
+.epg-event-meta {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.text-primary-color {
+  color: var(--primary-color);
+}
+
+.epg-event-card h3 {
+  margin: 0 0 8px 0 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  font-size: 1.2rem !important;
+}
+
+.epg-event-card p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* --- LICENSES COMPONENT STYLES --- */
+.license-scroll-box {
+  height: 500px;
+  overflow-y: auto;
+  background-color: var(--bg-color);
+  border: 1px solid #cbd5e1;
+  border-radius: var(--border-radius);
+  padding: 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+/* Schickere Formatierung für Lizenzüberschriften */
+.license-heading {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+  margin-top: 25px;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 4px;
+}
+
+.license-scroll-box p {
+  margin-bottom: 15px;
+}
+
+.license-scroll-box pre {
+  background: #e2e8f0;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+box {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.display-table-headers th {
+  text-align: left;
+  padding: 10px 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--accent-color);
+}
+
+.display-table-headers td {
+  border-bottom: 1px solid var(--accent-color);
+}
+
+/* Erste Spalte in LNB-Tabelle soll nicht wie Label fetten */
+.display-table-headers td:first-child {
+  font-weight: normal !important;
+  color: var(--text-main) !important;
+}
+/* --- HARDWARE MONITOR COMPONENT STYLES --- */
+.monitor-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--accent-color);
+  padding-bottom: 8px;
+  margin-bottom: 20px;
+}
+
+.monitor-header-row h3 {
+  margin: 0 !important;
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.badge-fan {
+  background-color: var(--primary-color) !important;
+  font-size: 0.9rem !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.monitor-graph-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--card-bg);
+  padding: 10px;
+  border-radius: var(--border-radius);
+}
+
+.monitor-graph-container svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+/* --- MULTICAST COMPONENT STYLES --- */
+.block {
+  display: block;
+}
+.inline-form {
+  margin: 0;
+  display: inline-block;
+}
+
+/* --- UNICABLE COMPONENT STYLES --- */
+.margin-none {
+  margin: 0 !important;
+}
+
+.layout-scif-tuners {
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.layout-scif-tuners .form-group:last-child {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+/* --- SETUP SCREEN COMPONENT STYLES --- */
+.setup-body {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.setup-container {
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+}
+
+.setup-card {
+  padding: 40px 30px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
+}
+
+.text-left {
+  text-align: left;
+}
+
+/* --- STREAM STATUS COMPONENT STYLES --- */
+.table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stream-status-table th, 
+.stream-status-table td {
+  padding: 12px 8px;
+  text-align: left;
+}
+
+/* Tabellen-Zellen im Flexbox-Modus für die Skalierung ausrichten */
+.stream-status-table tr {
+  display: flex;
+  width: 100%;
+}
+
+.stream-status-table th, 
+.stream-status-table td {
+  flex: 1;
+  min-width: 80px;
+  word-break: break-all;
+}
+
+/* Erste Spalte (Stream-Nummer) etwas schmaler */
+.stream-status-table th:first-child, 
+.stream-status-table td:first-child {
+  flex: 0 0 60px;
+  min-width: 60px;
+}
+
+/* Erste Spalte soll in dieser Tabelle nicht wie ein fettes Label wirken */
+.stream-status-table td:first-child {
+  font-weight: normal !important;
+  color: var(--text-main) !important;
+}
+
+/* --- SYSTEM SETTINGS COMPONENT STYLES --- */
+.label-help-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-links {
+  font-size: 0.85rem;
+}
+
+.help-links a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.help-links a:hover {
+  text-decoration: underline;
+}
+
+.text-sm {
+  font-size: 0.8rem;
+}
+
+.margin-none {
+  margin: 0 !important;
+}
+
+/* Modulationssysteme Grid */
+.system-delsys-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.delsys-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-color);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.delsys-item input {
+  cursor: pointer;
+}
+
+.hide-delsys {
+  display: none !important;
+}
+
+/* Hilfe Popups */
+.help-box-card {
+  background-color: #fef08a !important; /* Sanftes Warn-Gelb */
+  border: 1px solid #fef08a;
+  border-left: 5px solid #eab308;
+  padding: 15px 20px;
+  border-radius: var(--border-radius);
+  color: #713f12;
+  cursor: pointer;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+}
+
+.help-box-card h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.05rem;
+  color: #713f12;
+}
+
+.help-box-card p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+/* --- TUNER STATUS COMPONENT STYLES --- */
+.tuner-status-table tr {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.tuner-status-table th, 
+.tuner-status-table td {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: left;
+}
+
+/* Erste Spalte (Tuner-Nummer) schmaler halten */
+.tuner-status-table th:first-child, 
+.tuner-status-table td:first-child {
+  flex: 0 0 70px;
+  min-width: 70px;
+}
+
+.tuner-status-table td:first-child {
+  font-weight: normal !important;
+  color: var(--text-main) !important;
+}
+
+/* Status Badges für Signal-Lock */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.badge-locked {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-nosignal {
+  background-color: #ffedd5;
+  color: #9a3412;
+}
+
+.badge-idle {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* ==========================================================================
+   7. MANUELLER & AUTOMATISCHER DARK MODE (Klassengesteuert via menu.js)
+   ========================================================================== */
+
+/* Button-Styling für den Schalter in der Navigation */
+.dark-mode-toggle-item {
+  margin-top: 15px;
+  border-top: 1px solid var(--accent-color);
+  padding-top: 10px;
+}
+
+.btn-dark-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 15px;
+  background: transparent;
+  border: 1px dashed var(--text-muted);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-dark-toggle:hover {
+  background-color: var(--accent-color);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.mode-icon {
+  font-size: 1.1rem;
+}
+
+/* DIE FARB-VARIABLEN FÜR DEN DUNKELN MODUS */
+/* Greift, wenn entweder das System "dark" meldet ODER die JS-Klasse aktiv ist */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light-theme) { /* Verhindert Konflikt, falls man explizit Light wählt */
+    --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc;
+    --text-muted: #94a3b8; --primary-color: #38bdf8; --accent-color: #334155;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Erzwingt Dark-Mode, wenn die Klasse per Button gesetzt wurde */
+.dark-theme {
+  --bg-color: #0f172a; --card-bg: #1e293b; --text-main: #f8fafc;
+  --text-muted: #94a3b8; --primary-color: #38bdf8; --accent-color: #334155;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark-Mode spezifische Element-Anpassungen (Sowohl für Media-Query als auch Klasse) */
+@media (prefers-color-scheme: dark) { :root:not(.light-theme) { .btn-secondary { border-color: #475569; } .btn-secondary:hover { background-color: #475569; } .form-control { border-color: #475569; } .form-control:focus { border-color: var(--primary-color); } .help-box-card { background-color: #713f12 !important; border-color: #a16207; color: #fef08a; } .help-box-card h3 { color: #fef08a; } .help-box-card p { color: #fef3c7; } .monitor-graph-container { background-color: var(--card-bg); } .monitor-graph-container rect { fill: #1e293b !important; } .monitor-graph-container text { fill: #94a3b8 !important; } .monitor-graph-container g[style*="stroke:#e2e8f0"] path, .monitor-graph-container g[style*="stroke:#e2e8f0"] text { stroke: #334155 !important; } .monitor-graph-container g[style*="stroke:#1e293b"] path { stroke: #f8fafc !important; } .badge-locked { background-color: #064e3b; color: #a7f3d0; } .badge-nosignal { background-color: #7c2d12; color: #ffedd5; } .badge-idle { background-color: #334155; color: #cbd5e1; } .status-count { background: #1e293b; border-color: #475569; } } }
+
+.dark-theme .btn-secondary { border-color: #475569; }
+.dark-theme .btn-secondary:hover { background-color: #475569; }
+.dark-theme .form-control { border-color: #475569; }
+.dark-theme .form-control:focus { border-color: var(--primary-color); }
+.dark-theme .help-box-card { background-color: #713f12 !important; border-color: #a16207; color: #fef08a; }
+.dark-theme .help-box-card h3 { color: #fef08a; }
+.dark-theme .help-box-card p { color: #fef3c7; }
+.dark-theme .monitor-graph-container { background-color: var(--card-bg); }
+.dark-theme .monitor-graph-container rect { fill: #1e293b !important; }
+.dark-theme .monitor-graph-container text { fill: #94a3b8 !important; }
+.dark-theme .monitor-graph-container g[style*="stroke:#e2e8f0"] path, .dark-theme .monitor-graph-container g[style*="stroke:#e2e8f0"] text { stroke: #334155 !important; }
+.dark-theme .monitor-graph-container g[style*="stroke:#1e293b"] path { stroke: #f8fafc !important; }
+.dark-theme .badge-locked { background-color: #064e3b; color: #a7f3d0; }
+.dark-theme .badge-nosignal { background-color: #7c2d12; color: #ffedd5; }
+.dark-theme .badge-idle { background-color: #334155; color: #cbd5e1; }
+.dark-theme .status-count { background: #1e293b; border-color: #475569; }
+
+

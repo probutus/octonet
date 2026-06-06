@@ -1,27 +1,48 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Octonet - Erstkonfiguration</title>
-    <style>
-        body { font-family: sans-serif; background: #eceff1; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 320px; }
-        h2 { margin-top: 0; color: #37474f; }
-        input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #00bcd4; border: none; color: white; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #00acc1; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - Erstkonfiguration</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
-<body>
-    <div class="box">
-        <h2>Erstkonfiguration</h2>
-        <p>Bitte legen Sie das Administrator-Passwort für den Benutzer <strong>admin</strong> fest:</p>
-        <form action="setup_save.lua" method="POST">
-            <input type="password" name="pwd1" placeholder="Passwort" required>
-            <input type="password" name="pwd2" placeholder="Passwort wiederholen" required>
-            <button type="submit">Passwort speichern</button>
-        </form>
+<body class="setup-body">
+
+  <div class="setup-container">
+    <div class="card text-center setup-card">
+      
+      <div class="update-warning-icon">⚙️</div>
+      
+      <h2 class="margin-bottom">Erstkonfiguration</h2>
+      
+      <p class="update-subtext">
+        Bitte lege das Administrator-Passwort für den Benutzer 
+        <strong>admin</strong> fest:
+      </p>
+      
+      <form action="setup_save.lua" method="POST" class="form-grid margin-top-heavy">
+        <div class="form-group text-left">
+          <label>Neues Passwort:</label>
+          <input type="password" name="pwd1" class="form-control" 
+                 placeholder="Passwort eingeben" required>
+        </div>
+        
+        <div class="form-group text-left">
+          <label>Passwort wiederholen:</label>
+          <input type="password" name="pwd2" class="form-control" 
+                 placeholder="Passwort wiederholen" required>
+        </div>
+
+        <div class="center-content margin-top-heavy">
+          <button type="submit" class="btn btn-primary btn-block">
+            Passwort speichern
+          </button>
+        </div>
+      </form>
+
     </div>
+  </div>
+
 </body>
 </html>
 

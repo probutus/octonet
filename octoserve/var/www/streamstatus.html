@@ -1,171 +1,152 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta http-equiv="Pragma" content="no-cache" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add additional scripts and settings here -->
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-var LastTimeStamp = 0;
-var LastBytes = null;
-
-var xmlhttp = new XMLHttpRequest();
-var url = "/octoserve/streamstatus.json";
-
-xmlhttp.onreadystatechange=function()
-{
-    if (xmlhttp.readyState == 4 )
-    {
-      if( xmlhttp.status == 200 )
-         myFunction(xmlhttp.responseText);
-    }
-}
-
-function myFunction(response)
-{
-   try 
-   {
-      var js = JSON.parse(response);   
-      Show(js.StreamList,js.TimeStamp);
-   }
-   catch(err) {}
-   window.setTimeout(renew,1000);  
-}
-
-function Diff(a,b)
-{
-  if( b < 0 && a > 0 )
-  {
-    return b - a + 4294967296;
-  }
-  else
-    return b - a;
-}
-
-function Show(StreamList,TimeStamp)
-{
-   if( LastBytes == null )
-   {
-     LastBytes = new Array();
-     LastTimeStamp = TimeStamp;
-     for( var i = 0; i < StreamList.length; i++ )
-     {
-       LastBytes[i] = 0;
-       if( StreamList[i].Status == "Active" )
-       {
-         LastBytes[i] = StreamList[i].Bytes;
-       }
-       document.getElementById("trStream"+i).style.display = "table-row";    
-     }
-   }
-
-
-  for(var i = 0; i < StreamList.length ; i++ )
-  {    
-    if( StreamList[i].Status == "Active" )
-    {
-      document.getElementById("tdStatus"+i).firstChild.nodeValue = "Running";
-      document.getElementById("tdInput"+i).firstChild.nodeValue  = StreamList[i].Input + 1;
-      document.getElementById("tdClient"+i).firstChild.nodeValue  = StreamList[i].Client;
-      document.getElementById("tdPackets"+i).firstChild.nodeValue  = StreamList[i].Packets;
-      var TimeDiff = Diff(LastTimeStamp,TimeStamp);
-      var BytesDiff = Diff(LastBytes[i],StreamList[i].Bytes);
-      if( TimeDiff > 0 && BytesDiff > 0 )
-      {
-        var Speed = 8000 * BytesDiff / TimeDiff;
-        document.getElementById("tdSpeed"+i).firstChild.nodeValue  = Speed.toFixed(0);
-        LastBytes[i] = StreamList[i].Bytes;
-      }
-      else
-        document.getElementById("tdSpeed"+i).firstChild.nodeValue  = "";
-    }
-    else
-    {
-      document.getElementById("tdStatus"+i).firstChild.nodeValue = "Stopped";
-      document.getElementById("tdInput"+i).firstChild.nodeValue  = "";
-      document.getElementById("tdClient"+i).firstChild.nodeValue  = "";
-      document.getElementById("tdPackets"+i).firstChild.nodeValue  = "";
-      document.getElementById("tdSpeed"+i).firstChild.nodeValue  = "";
-      LastBytes[i] = 0;
-    }
-  }
-  LastTimeStamp = TimeStamp;
-}
-
-function renew()
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
-
-function OnLoad()
-{
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>OctopusNet - Stream Status</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
   
-  window.setTimeout(renew,1000);  
-}
+  <script type="text/javascript">
+  var LastTimeStamp = 0;
+  var LastBytes = null;
 
-</script>
+  var xmlhttp = new XMLHttpRequest();
+  var url = "/octoserve/streamstatus.json";
+
+  xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+       myFunction(xmlhttp.responseText);
+    }
+  }
+
+  function myFunction(response) {
+     try {
+        var js = JSON.parse(response);   
+        Show(js.StreamList, js.TimeStamp);
+     } catch(err) {}
+     window.setTimeout(renew, 1000);  
+  }
+
+  function Diff(a, b) {
+    if (b < 0 && a > 0) {
+      return b - a + 4294967296;
+    } else {
+      return b - a;
+    }
+  }
+
+  function Show(StreamList, TimeStamp) {
+     if (LastBytes == null) {
+       LastBytes = new Array();
+       LastTimeStamp = TimeStamp;
+       for (var i = 0; i < StreamList.length; i++) {
+         LastBytes[i] = 0;
+         if (StreamList[i].Status == "Active") {
+           LastBytes[i] = StreamList[i].Bytes;
+         }
+         // Flexbox-Layout Kompatibilität
+         document.getElementById("trStream" + i).style.display = "flex";    
+       }
+     }
+
+    for (var i = 0; i < StreamList.length; i++) {    
+      if (StreamList[i].Status == "Active") {
+        document.getElementById("tdStatus" + i).firstChild.nodeValue = "Running";
+        document.getElementById("tdInput" + i).firstChild.nodeValue = StreamList[i].Input + 1;
+        document.getElementById("tdClient" + i).firstChild.nodeValue = StreamList[i].Client;
+        document.getElementById("tdPackets" + i).firstChild.nodeValue = StreamList[i].Packets;
+        
+        var TimeDiff = Diff(LastTimeStamp, TimeStamp);
+        var BytesDiff = Diff(LastBytes[i], StreamList[i].Bytes);
+        if (TimeDiff > 0 && BytesDiff > 0) {
+          var Speed = 8000 * BytesDiff / TimeDiff;
+          document.getElementById("tdSpeed" + i).firstChild.nodeValue = Speed.toFixed(0) + " kbps";
+          LastBytes[i] = StreamList[i].Bytes;
+        } else {
+          document.getElementById("tdSpeed" + i).firstChild.nodeValue = "-";
+        }
+      } else {
+        document.getElementById("tdStatus" + i).firstChild.nodeValue = "Stopped";
+        document.getElementById("tdInput" + i).firstChild.nodeValue = "-";
+        document.getElementById("tdClient" + i).firstChild.nodeValue = "-";
+        document.getElementById("tdPackets" + i).firstChild.nodeValue = "-";
+        document.getElementById("tdSpeed" + i).firstChild.nodeValue = "-";
+        LastBytes[i] = 0;
+      }
+    }
+    LastTimeStamp = TimeStamp;
+  }
+
+  function renew() {
+     xmlhttp.open("GET", url, true);
+     xmlhttp.send();
+  }
+
+  function OnLoad() {
+    window.setTimeout(renew, 1000);  
+  }
+  </script>
 </head>
-
 <body onload="OnLoad()">
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable">
-  <colgroup>
-    <col style="width:182px"/>
-    <col style="width:728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="maintd">
-      <div class="content">
-        <!-- Begin Content -->
-          <table id="streamstatus" style="margin:auto">
-            <colgroup>
-              <col style="width:80px"/>
-              <col style="width:80px"/>
-              <col style="width:80px"/>
-              <col style="width:100px"/>
-              <col style="width:130px"/>
-              <col style="width:170px"/> 
-            </colgroup>
-            <tr>
-              <th>Stream</th>
-              <th>Status</th>
-              <th>Input</th>
-              <th>Client</th>
-              <th>RTP Packets</th>
-              <th>Speed</th>
-            </tr>
-            <script type="text/javascript">
-                for( var i = 0; i < 16 ; i++ )
-                {    
-                  document.write('<tr id="trStream'+i+'" style="display:none">');
-                  document.write('<td>' + (i+1) + '</td>');  
-                  document.write('<td id="tdStatus'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdInput'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdClient'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdPackets'+i+'">&nbsp;</td>');    
-                  document.write('<td id="tdSpeed'+i+'">&nbsp;</td>');
-                  document.write('</tr>');
-                }
-            </script>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
 
-          </table>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Netzwerk Stream Status</h1>
+          <h2>Echtzeit-Überwachung der aktiven IPTV- und RTSP-Datenströme</h2>
+        </div>
 
+        <div class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Stream Übersicht</h3>
+            
+            <div class="table-responsive-wrapper">
+              <table id="streamstatus" class="data-table display-table-headers stream-status-table">
+                <thead>
+                  <tr>
+                    <th>Stream</th>
+                    <th>Status</th>
+                    <th>Input</th>
+                    <th>Client IP</th>
+                    <th>RTP Packets</th>
+                    <th>Speed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <script type="text/javascript">
+                    for (var i = 0; i < 16; i++) {    
+                      document.write('<tr id="trStream' + i + '" style="display:none">');
+                      document.write('<td>' + (i + 1) + '</td>');  
+                      document.write('<td id="tdStatus' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdInput' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdClient' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdPackets' + i + '">&nbsp;</td>');    
+                      document.write('<td id="tdSpeed' + i + '">&nbsp;</td>');
+                      document.write('</tr>');
+                    }
+                  </script>
+                </tbody>
+              </table>
+            </div>
+
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+

@@ -1,64 +1,73 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - Bitte warten</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
 
-<!-- Add page scripts here -->
-<script type="text/javascript">
+  <!-- Page scripts -->
+  <script type="text/javascript">
+  var WaitCounter = 5;
 
-function Wait()
-{
-  if( WaitCounter == 0 )
-  {
-    location.replace('/index.html');
+  function Wait() {
+    if (WaitCounter == 0) {
+      location.replace('/index.html');
+    } else {
+      WaitCounter = WaitCounter - 1;
+      document.getElementById("waitcounter").firstChild.nodeValue = WaitCounter;
+      window.setTimeout(Wait, 1000);  
+    }
   }
-  else
-  {
-    WaitCounter = WaitCounter - 1;
-    document.getElementById("waitcounter").firstChild.nodeValue  = WaitCounter;
-    window.setTimeout(Wait,1000);  
+
+  function OnLoad() {
+    var param = document.URL.match(/\d+$/);
+    WaitCounter = 5;
+    if (param) WaitCounter = parseInt(param);
+    document.getElementById("waitcounter").firstChild.nodeValue = WaitCounter;
+    window.setTimeout(Wait, 1000);  
   }
-}
-
-function OnLoad()
-{
-  var param = document.URL.match(/\d+$/);
-  
-  WaitCounter = 5;
-  if( param ) WaitCounter = parseInt(param);
-  document.getElementById("waitcounter").firstChild.nodeValue  = WaitCounter;
-  window.setTimeout(Wait,1000);  
-}
-
-</script>
-
+  </script>
 </head>
 <body onload="OnLoad()">
+  <div class="app-container">
+    
+    <header class="main-header">
+      <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+    </header>
 
+    <div class="content-wrapper">
+      <!-- Leere Navigation zur optischen Konsistenz bei Systemübergängen -->
+      <nav class="side-navigation" style="opacity: 0.4; pointer-events: none;">
+        <ul class="menu-list">
+          <li class="menucur"><span>Bitte warten...</span></li>
+        </ul>
+      </nav>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <img src="/BannerDD.jpg" alt="DD" width="910" height="130" />
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->                
-        <h1 id="waitcounter" align="center">&nbsp;</h1>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+      <main class="main-content">
+        <div class="card text-center text-center-content">
+          
+          <div class="update-warning-icon">⏳</div>
+          
+          <h2 class="margin-bottom">Aktion wird ausgeführt</h2>
+          
+          <p class="update-subtext">
+            Bitte hab einen kurzen Moment Geduld. Die Konfiguration wird im 
+            Hintergrund angewendet. Du wirst gleich automatisch weitergeleitet.
+          </p>
 
+          <div class="status-display-box justify-center margin-top-heavy">
+            <span id="waitcounter" class="status-count font-bold font-large" style="min-width: 40px; text-align: center;">
+              5
+            </span>
+            <span class="status-msg font-bold">Sekunden verbleibend...</span>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
 </body>
 </html>
+

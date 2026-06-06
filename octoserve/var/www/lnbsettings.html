@@ -1,380 +1,280 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<script type="text/javascript" src="/lnbsettings.lua"></script>
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-function SaveSettings()
-{
-  var Mode = document.getElementById("ModeButton").checked;
-
-  var form = document.createElement("form");
-  form.setAttribute("method", "post");
-  form.setAttribute("action", "/lnbsettings.lua?set");
-
-  var field = document.createElement("input");
-  field.setAttribute("type", "hidden");
-  field.setAttribute("name", "auto");
-  field.setAttribute("value", Mode ? "0" : "1");
-  form.appendChild(field);    
- 
-  if( Mode )
-  {
-    var table = document.getElementById("LNBTable");  
-    var Rows = table.getElementsByTagName("tr");
-
-    for(var i = 1; i < Rows.length; i++) 
-    {
-      var Cols = Rows[i].getElementsByTagName("td");
-
-      field = document.createElement("input");
-      field.setAttribute("type", "hidden");
-      field.setAttribute("name", "LNB");
-
-      var value = i.toString();
-      for( var j = 1; j < 6; j++ )
-      {
-        var curValue = Cols[j].firstChild.nodeValue;
-        if( curValue == "-" ) curValue = "0";
-        value = value + "." + curValue;
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - LNB Settings</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  <!-- Included scripts -->
+  <script type="text/javascript" src="/lnbsettings.lua"></script>
+  
+  <!-- Page scripts -->
+  <script type="text/javascript">
+  function SaveSettings() {
+    var Mode = document.getElementById("ModeButton").checked;
+    var form = document.createElement("form");
+    form.setAttribute("method", "post");
+    form.setAttribute("action", "/lnbsettings.lua?set");
+    var field = document.createElement("input");
+    field.setAttribute("type", "hidden");
+    field.setAttribute("name", "auto");
+    field.setAttribute("value", Mode ? "0" : "1");
+    form.appendChild(field);
+    
+    if (Mode) {
+      var table = document.getElementById("LNBTable");
+      var Rows = table.getElementsByTagName("tr");
+      for (var i = 1; i < Rows.length; i++) {
+        var Cols = Rows[i].getElementsByTagName("td");
+        field = document.createElement("input");
+        field.setAttribute("type", "hidden");
+        field.setAttribute("name", "LNB");
+        var value = i.toString();
+        for (var j = 1; j < 6; j++) {
+          var curValue = Cols[j].firstChild.nodeValue;
+          if (curValue == "-") curValue = "0";
+          value = value + "." + curValue;
+        }
+        field.setAttribute("value", value);
+        form.appendChild(field);
       }
-      field.setAttribute("value", value);
-      form.appendChild(field);
     }
+    document.body.appendChild(form);
+    form.submit();
+    return false;
   }
-  document.body.appendChild(form);  // really needed?
-  form.submit();
-  return false;
-}
 
-function CreateRow(LNB,Tuner,Source,LOF1,LOF2,LOFS)
-{
-  var row = document.createElement("tr");
-  
-  var col;
-  var txt;
-
-  col = document.createElement("td");
-  txt = document.createTextNode(LNB+1);
-  col.appendChild(txt);
-  row.appendChild(col);
-  
-  col = document.createElement("td");
-  txt = document.createTextNode(Tuner > 0 ? Tuner : "-");
-  col.appendChild(txt);
-  row.appendChild(col);
-  
-  col = document.createElement("td");
-  txt = document.createTextNode(Source > 0 ? Source : "-");
-  col.appendChild(txt);
-  row.appendChild(col);
-  
-  col = document.createElement("td");
-  txt = document.createTextNode(LOF1 > 0 ? LOF1 : "?");
-  col.appendChild(txt);
-  row.appendChild(col);
-  
-  col = document.createElement("td");
-  txt = document.createTextNode(LOF2 > 0 ? LOF2 : "-");
-  col.appendChild(txt);
-  row.appendChild(col);
-  
-  col = document.createElement("td");
-  txt = document.createTextNode(LOFS > 0 ? LOFS : "-");
-  col.appendChild(txt);
-  row.appendChild(col);
- 
-  return row;
-}
-
-function InsertRow(Tuner,Source,LOF1,LOF2,LOFS)
-{
-  var table = document.getElementById("LNBTable");
-  
-  var Rows = table.getElementsByTagName("tr");
-
-  var LNB = 0;
-  var Replace = false;
-  var curRow = null;
-  
-  for(var i = 1; i < Rows.length; i++) 
-  {
-    var Cols = Rows[i].getElementsByTagName("td");
+  function CreateRow(LNB, Tuner, Source, LOF1, LOF2, LOFS) {
+    var row = document.createElement("tr");
+    var col, txt;
     
-    var curTuner = Cols[1].firstChild.nodeValue;
-    var curSource = Cols[2].firstChild.nodeValue;
+    col = document.createElement("td");
+    txt = document.createTextNode(LNB + 1);
+    col.appendChild(txt); row.appendChild(col);
     
-    if( curTuner == "-" ) curTuner = 0;
-    if( curSource == "-" ) curSource = 0;
-
-    if( curTuner == Tuner && curSource == Source )
-    {
-      Cols[3].firstChild.nodeValue = LOF1 > 0 ? LOF1 : "?";
-      Cols[4].firstChild.nodeValue = LOF2 > 0 ? LOF2 : "-";
-      Cols[5].firstChild.nodeValue = LOFS > 0 ? LOFS : "-";
-      return false;
-    }
+    col = document.createElement("td");
+    txt = document.createTextNode(Tuner > 0 ? Tuner : "-");
+    col.appendChild(txt); row.appendChild(col);
     
-    if( (Tuner == curTuner && curSource > Source ) || curTuner > Tuner )
-    {
-      curRow = Rows[i];
-      break;
-    }
+    col = document.createElement("td");
+    txt = document.createTextNode(Source > 0 ? Source : "-");
+    col.appendChild(txt); row.appendChild(col);
     
-    LNB = LNB + 1;
-  }
-  
-  var newRow = CreateRow(LNB,Tuner,Source,LOF1,LOF2,LOFS);
-  if( curRow == null )  
-    table.appendChild(newRow);
-  else
-  {
-    for( var i = LNB + 1; i < Rows.length; i++ )
-    {
-      Rows[i].getElementsByTagName("td")[0].firstChild.nodeValue = i + 1;
-    }
-    table.insertBefore(newRow,curRow);
-  }
-}
-
-function ClearLNB()
-{
-  document.getElementById("SetButton").disabled  = false;
-  
-  var table = document.getElementById("LNBTable");  
-  
-  while( true )
-  {
-    var Rows = table.getElementsByTagName("tr");
-    if( Rows.length <= 1 ) break;
-    table.removeChild(Rows[1]);
-  }
-
-}
-
-function AddLNB()
-{
-  document.getElementById("SetButton").disabled  = false;
-  
-  var Tuner = document.getElementById("Tuner").value;
-  var Source = document.getElementById("Source").value;
-  var LOF1 = document.getElementById("LOF1").value;
-  var LOF2 = document.getElementById("LOF2").value;
-  var LOFS = document.getElementById("LOFS").value;
-
-  if( Tuner == "" ) Tuner = 0;
-  else Tuner = parseInt(Tuner);
-  
-  if( Source == "" ) Source = 0;
-  else Source = parseInt(Source);
-  
-  LOF1 = parseInt(LOF1);
-  
-  if( LOF2 == "" ) LOF2 = 0;
-  else LOF2 = parseInt(LOF2);
-  
-  if( LOFS == "" ) LOFS = 0;
-  else LOFS = parseInt(LOFS);
-  
-  if( isNaN(Tuner) || isNaN(Source) || isNaN(LOF1) || isNaN(LOF2) || isNaN(LOFS) ) return; // Error
-  
-  if( Tuner > 0 && Source == 0 ) return;  // Error
-  
-  if( Tuner > 8 || Source > 4 ) return;
-  
-  InsertRow(Tuner,Source,LOF1,LOF2,LOFS);
-}
-
-function ChangeMode()
-{
-  var t = document.getElementById("SetButton");
-  document.getElementById("SetButton").disabled  = false;
-  if( document.getElementById("ModeButton").checked )
-  {
-    document.getElementById("AutoSetting").style.display = "none";
-    document.getElementById("ManualSetting").style.display = "block";
-  }
-  else
-  {
-    document.getElementById("AutoSetting").style.display = "block";
-    document.getElementById("ManualSetting").style.display = "none";
-  }
-}
-
-function OnLoad()
-{
-  document.getElementById("SetButton").disabled  = true;
-
-  if( LNBList.length > 0 )
-  {
-    document.getElementById("ModeButton").checked  = true;
-    document.getElementById("AutoSetting").style.display = "none";
-    document.getElementById("ManualSetting").style.display = "block";
+    col = document.createElement("td");
+    txt = document.createTextNode(LOF1 > 0 ? LOF1 : "?");
+    col.appendChild(txt); row.appendChild(col);
     
+    col = document.createElement("td");
+    txt = document.createTextNode(LOF2 > 0 ? LOF2 : "-");
+    col.appendChild(txt); row.appendChild(col);
+    
+    col = document.createElement("td");
+    txt = document.createTextNode(LOFS > 0 ? LOFS : "-");
+    col.appendChild(txt); row.appendChild(col);
+    
+    return row;
+  }
+
+  function InsertRow(Tuner, Source, LOF1, LOF2, LOFS) {
     var table = document.getElementById("LNBTable");
-    for(var i = 0; i < LNBList.length; i++ )
-    {
-      var Row = CreateRow(i,LNBList[i].Tuner,LNBList[i].Source,LNBList[i].LOF1,LNBList[i].LOF2,LNBList[i].LOFS);      
-      table.appendChild(Row);
+    var Rows = table.getElementsByTagName("tr");
+    var LNB = 0, curRow = null;
+    
+    for (var i = 1; i < Rows.length; i++) {
+      var Cols = Rows[i].getElementsByTagName("td");
+      var curTuner = Cols[1].firstChild.nodeValue;
+      var curSource = Cols[2].firstChild.nodeValue;
+      if (curTuner == "-") curTuner = 0;
+      if (curSource == "-") curSource = 0;
+      if (curTuner == Tuner && curSource == Source) {
+        Cols[3].firstChild.nodeValue = LOF1 > 0 ? LOF1 : "?";
+        Cols[4].firstChild.nodeValue = LOF2 > 0 ? LOF2 : "-";
+        Cols[5].firstChild.nodeValue = LOFS > 0 ? LOFS : "-";
+        return false;
+      }
+      if ((Tuner == curTuner && curSource > Source) || curTuner > Tuner) {
+        curRow = Rows[i];
+        break;
+      }
+      LNB = LNB + 1;
+    }
+    var newRow = CreateRow(LNB, Tuner, Source, LOF1, LOF2, LOFS);
+    if (curRow == null) {
+      table.appendChild(newRow);
+    } else {
+      for (var i = LNB + 1; i < Rows.length; i++) {
+        Rows[i].getElementsByTagName("td")[0].firstChild.nodeValue = i + 1;
+      }
+      table.insertBefore(newRow, curRow);
     }
   }
-  else
-  {
-    document.getElementById("ModeButton").checked  = false;
-    document.getElementById("AutoSetting").style.display = "block";
-    document.getElementById("ManualSetting").style.display = "none";
+
+  function ClearLNB() {
+    document.getElementById("SetButton").disabled = false;
+    var table = document.getElementById("LNBTable");
+    while (true) {
+      var Rows = table.getElementsByTagName("tr");
+      if (Rows.length <= 1) break;
+      table.removeChild(Rows[1]);
+    }
   }
-}
 
-</script>
+  function AddLNB() {
+    document.getElementById("SetButton").disabled = false;
+    var Tuner = document.getElementById("Tuner").value;
+    var Source = document.getElementById("Source").value;
+    var LOF1 = document.getElementById("LOF1").value;
+    var LOF2 = document.getElementById("LOF2").value;
+    var LOFS = document.getElementById("LOFS").value;
+    
+    Tuner = (Tuner == "") ? 0 : parseInt(Tuner);
+    Source = (Source == "") ? 0 : parseInt(Source);
+    LOF1 = parseInt(LOF1);
+    LOF2 = (LOF2 == "") ? 0 : parseInt(LOF2);
+    LOFS = (LOFS == "") ? 0 : parseInt(LOFS);
+    
+    if (isNaN(Tuner) || isNaN(Source) || isNaN(LOF1) || isNaN(LOF2) || isNaN(LOFS)) return;
+    if (Tuner > 0 && Source == 0) return;
+    if (Tuner > 8 || Source > 4) return;
+    InsertRow(Tuner, Source, LOF1, LOF2, LOFS);
+  }
 
+  function ChangeMode() {
+    document.getElementById("SetButton").disabled = false;
+    if (document.getElementById("ModeButton").checked) {
+      document.getElementById("AutoSetting").style.display = "none";
+      document.getElementById("ManualSetting").style.display = "block";
+    } else {
+      document.getElementById("AutoSetting").style.display = "block";
+      document.getElementById("ManualSetting").style.display = "none";
+    }
+  }
+
+  function OnLoad() {
+    document.getElementById("SetButton").disabled = true;
+    if (LNBList.length > 0) {
+      document.getElementById("ModeButton").checked = true;
+      document.getElementById("AutoSetting").style.display = "none";
+      document.getElementById("ManualSetting").style.display = "block";
+      var table = document.getElementById("LNBTable");
+      for (var i = 0; i < LNBList.length; i++) {
+        var Row = CreateRow(i, LNBList[i].Tuner, LNBList[i].Source, 
+                            LNBList[i].LOF1, LNBList[i].LOF2, LNBList[i].LOFS);
+        table.appendChild(Row);
+      }
+    } else {
+      document.getElementById("ModeButton").checked = false;
+      document.getElementById("AutoSetting").style.display = "block";
+      document.getElementById("ManualSetting").style.display = "none";
+    }
+  }
+  </script>
 </head>
 <body onload="OnLoad()">
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <table class="tableleft" align="center" cellspacing="2px">
-          <tr>
-            <td>Enable manual LNB configuration</td>
-            <td>
-              <form action="">
-                 <input id="ModeButton" type="checkbox" value="Check" checked="false" onclick="ChangeMode()" />
-              </form>
-            </td>
-          <tr>
-          <tr><td colspan="2" align="right">
-            <div style="width: 300px">
-              <form action="">
-                <input type="Button" value="Cancel" onclick="location.replace('index.html')" >
-                <input id="SetButton" type="Button" value="Set" onclick="SaveSettings()" >
-              </form>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
+
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>LNB Einstellungen</h1>
+          <h2>Antennen- und Satelliten-Konfiguration anpassen</h2>
+        </div>
+
+        <!-- Globale Modus-Auswahl -->
+        <section class="card">
+          <h3>Konfigurationsmodus</h3>
+          <div class="form-grid">
+            <div class="form-group row-align">
+              <label for="ModeButton" class="font-bold">Manuelle LNB-Konfiguration aktivieren</label>
+              <input id="ModeButton" type="checkbox" class="form-checkbox" onclick="ChangeMode()">
             </div>
-          </td></tr>
+          </div>
+          <div class="button-container margin-top">
+            <input type="button" class="btn btn-secondary" value="Cancel" onclick="location.replace('index.html')">
+            <input id="SetButton" type="button" class="btn btn-primary" value="Set" onclick="SaveSettings()">
+          </div>
+        </section>
 
-        </table>
-
-        <div id="AutoSetting" style="margin:20px; clear:both"> 
-          <h3>Automatic LNB Selection</h3>
-          <li><b>Ku Band:</b> Universal LNB</li>
-          <!--
-          <li><b>C Band:</b> Standard LNB with LOF = 5150 MHz</li>
-          <li><b>Ka Band:</b> Soarsat LNB with LOF = 21200 MHz</li>
-          -->
+        <!-- Automatischer Modus (Sichtbar wenn Checkbox inaktiv) -->
+        <div id="AutoSetting" class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Automatische LNB-Zuweisung</h3>
+            <div class="status-display-box">
+              <span class="badge">Aktiv</span>
+              <span class="status-msg"><strong>Ku-Band:</strong> Universal LNB vorkonfiguriert.</span>
+            </div>
+          </section>
         </div>
 
-        <div id="ManualSetting" style="margin:20px; clear:both"> 
-          <h3>Manual LNB Selection</h3>
-          <table align="center">
-            <tr>
-              <td>Tuner&nbsp;&nbsp;</td>
-              <td>
-                <form action="">
-                  <input id="Tuner" type="text" value="" maxlength="2" onclick=""/>                
-                </form>
-              </td>
-              <td>&nbsp;(empty for all)</td>
-            </tr>
-            <tr>
-              <td>Source&nbsp;&nbsp;</td>
-              <td>
-                <form action="">
-                  <input id="Source" type="text" value="" maxlength="1" onclick=""/>                
-                </form>
-              </td>
-              <td>&nbsp;(empty for all)</td>
-            </tr>
-            <tr>
-              <td>LOF low&nbsp;&nbsp;</td>
-              <td>
-                <form action="">
-                  <input id="LOF1" type="text" value="9750" maxlength="5" align="right" onclick=""/>                
-                </form>
-              </td>
-              <td>&nbsp;MHz</td>
-            </tr>
-            <tr>
-              <td>LOF high&nbsp;&nbsp;</td>
-              <td>
-                <form action="">
-                  <input id="LOF2" type="text" value="10600" maxlength="5" onclick=""/>                
-                </form>
-              </td>
-              <td>&nbsp;MHz (empty for unused)</td>
-            </tr>
-            <tr>
-              <td>LOF switch&nbsp;&nbsp;</td>
-              <td>
-                <form action="">
-                  <input id="LOFS" type="text" value="11700" maxlength="5" onclick=""/>                
-                </form>
-              </td>
-              <td>&nbsp;MHz (empty for unused)</td>
-            </tr>
-            <tr><td colspan="2" align="right">
-                <form action="">
-                  <input id="ClearButton" type="Button" value="Clear" onclick="ClearLNB()" >
-                  <input id="AddButton" type="Button" value="Add" onclick="AddLNB()" >
-                </form>
-            </td></tr>
-          </table>
-          <table>
-            <colgroup>
-              <col width="60px"/>
-              <col width="70px"/>
-              <col width="70px"/>
-              <col width="100px"/>
-              <col width="100px"/>
-              <col width="100px"/>
-              <col width="110px"/> 
-            </colgroup>
-            <tbody id="LNBTable"> 
-              <tr>
-                <th>LNB</th>
-                <th>Tuner</th>
-                <th>Source</th>
-                <th>LOF low</th>
-                <th>LOF high</th>
-                <th>LOF switch</th>
-                <th>&nbsp;</th>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        
-              <!---
-              <form action="">
-                 <input id="UpdateButton" type="Button" value="Test" onclick="DoPost(Test)" />
-              </form>
-              -->
-        
-        
-        
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+        <!-- Manueller Modus (Sichtbar wenn Checkbox aktiv) -->
+        <div id="ManualSetting" class="dashboard-grid">
+          
+          <!-- Eingabe-Formular -->
+          <section class="card">
+            <h3>LNB hinzufügen</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Tuner <span class="text-muted">(Leer für alle)</span></label>
+                <input id="Tuner" type="text" class="form-control" maxlength="2">
+              </div>
+              <div class="form-group">
+                <label>Source / Satelliten-Position <span class="text-muted">(Leer für alle)</span></label>
+                <input id="Source" type="text" class="form-control" maxlength="1">
+              </div>
+              <div class="form-group">
+                <label>LOF low (MHz)</label>
+                <input id="LOF1" type="text" class="form-control" value="9750" maxlength="5">
+              </div>
+              <div class="form-group">
+                <label>LOF high (MHz) <span class="text-muted">(Leer wenn ungenutzt)</span></label>
+                <input id="LOF2" type="text" class="form-control" value="10600" maxlength="5">
+              </div>
+              <div class="form-group">
+                <label>LOF switch (MHz) <span class="text-muted">(Leer wenn ungenutzt)</span></label>
+                <input id="LOFS" type="text" class="form-control" value="11700" maxlength="5">
+              </div>
+            </div>
+            <div class="button-container margin-top">
+              <input id="ClearButton" type="button" class="btn btn-danger" value="Clear All" onclick="ClearLNB()">
+              <input id="AddButton" type="button" class="btn btn-primary" value="Add LNB" onclick="AddLNB()">
+            </div>
+          </section>
 
+          <!-- Aktive LNB Tabelle -->
+          <section class="card">
+            <h3>Aktuelle LNB-Zuordnungen</h3>
+            <table class="data-table display-table-headers">
+              <thead>
+                <tr>
+                  <th>LNB</th>
+                  <th>Tuner</th>
+                  <th>Source</th>
+                  <th>LOF low</th>
+                  <th>LOF high</th>
+                  <th>Switch</th>
+                </tr>
+              </thead>
+              <tbody id="LNBTable">
+                <!-- Dynamische Zeilen werden hier injiziert -->
+              </tbody>
+            </table>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+

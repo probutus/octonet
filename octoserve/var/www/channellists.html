@@ -1,111 +1,65 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<script type="text/javascript" src="/systeminfo.lua"></script>
-<script type="text/javascript">Octoserve = false;</script>
-<script type="text/javascript" src="/octoserve/serverinfo.js"></script>
-
-<!-- Add page scripts here -->
 <script type="text/javascript">
-var hasCable = false;
-var hasSat = false;
-var hasTer = false;
-
-var StartTime = null;
-
-var xmlhttp = new XMLHttpRequest();
-var url = "/channelscan.lua?select=keys";
-
-xmlhttp.onreadystatechange=function()
-{
-    if (xmlhttp.readyState == 4 )
-    {
-      if( xmlhttp.status == 200 )
-         myFunction(xmlhttp.responseText);
-    }
+var hasCable = false, hasSat = false, hasTer = false, StartTime = null;
+var xmlhttp = new XMLHttpRequest(), url = "/channelscan.lua?select=keys";
+xmlhttp.onreadystatechange = function() {
+  if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    myFunction(xmlhttp.responseText);
+  }
 }
-
-function myFunction(response)
-{
+function myFunction(response) {
    var kl = JSON.parse(response);
-
    document.Cable.Select.length = 0;
    document.Satellite1.Select.length = 0;
    document.Satellite2.Select.length = 0;
    document.Satellite3.Select.length = 0;
    document.Satellite4.Select.length = 0;
-
-   document.Cable.Select.options[0] = (new Option("-", null, false, true) );
-   document.Satellite1.Select.options[0] = (new Option("-", null, false, true) );
-   document.Satellite2.Select.options[0] = (new Option("-", null, false, true) );
-   document.Satellite3.Select.options[0] = (new Option("-", null, false, true) );
-   document.Satellite4.Select.options[0] = (new Option("-", null, false, true) );
-
-   var iCable = 1;
-   var iSat = 1;
-
-   for(var i = 0; i < kl.KeyList.length; i++)
-   {
-      if( (hasCable && kl.KeyList[i].DVBType.indexOf("C") >= 0) ||
-          (hasTer   && kl.KeyList[i].DVBType.indexOf("T") >= 0) )
-      {
+   document.Cable.Select.options[0] = new Option("-", null, false, true);
+   document.Satellite1.Select.options[0] = new Option("-", null, false, true);
+   document.Satellite2.Select.options[0] = new Option("-", null, false, true);
+   document.Satellite3.Select.options[0] = new Option("-", null, false, true);
+   document.Satellite4.Select.options[0] = new Option("-", null, false, true);
+   var iCable = 1, iSat = 1;
+   for(var i = 0; i < kl.KeyList.length; i++) {
+      if ((hasCable && kl.KeyList[i].DVBType.indexOf("C") >= 0) || 
+          (hasTer && kl.KeyList[i].DVBType.indexOf("T") >= 0)) {
          var Select = (kl.KeyList[i].Key == "UM");
-         document.Cable.Select.options[iCable] = (new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, Select) );
+         document.Cable.Select.options[iCable] = 
+            new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, Select);
          iCable += 1;
       }
-      if( (hasSat && kl.KeyList[i].DVBType.indexOf("S") >= 0) )
-      {
+      if ((hasSat && kl.KeyList[i].DVBType.indexOf("S") >= 0)) {
          var Select = (kl.KeyList[i].Key == "0192");
-         document.Satellite1.Select.options[iSat] = (new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, Select) );
-         document.Satellite2.Select.options[iSat] = (new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false) );
-         document.Satellite3.Select.options[iSat] = (new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false) );
-         document.Satellite4.Select.options[iSat] = (new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false) );
+         document.Satellite1.Select.options[iSat] = 
+            new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, Select);
+         document.Satellite2.Select.options[iSat] = 
+            new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false);
+         document.Satellite3.Select.options[iSat] = 
+            new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false);
+         document.Satellite4.Select.options[iSat] = 
+            new Option(kl.KeyList[i].Title, kl.KeyList[i].Key, false, false);
          iSat += 1;
       }
    }
-
-   if( iCable > 1 )
-      document.getElementById("trCable").style.display = "table-row";
-   if( iSat > 1 )
-   {
-      document.getElementById("trSat1").style.display = "table-row";
-      document.getElementById("trSat2").style.display = "table-row";
-      document.getElementById("trSat3").style.display = "table-row";
-      document.getElementById("trSat4").style.display = "table-row";
+   if(iCable > 1) document.getElementById("trCable").style.display = "flex";
+   if(iSat > 1) {
+      document.getElementById("trSat1").style.display = "flex";
+      document.getElementById("trSat2").style.display = "flex";
+      document.getElementById("trSat3").style.display = "flex";
+      document.getElementById("trSat4").style.display = "flex";
    }
-
 }
-
-function SetSource(Src,SourceIndex)
-{
-}
-
-function OnLoad()
-{
-   for(var i = 0; i < Octoserve.TunerList.length; i++ )
-   {
-      if( Octoserve.TunerList[i] )
-      {
-         if( Octoserve.TunerList[i].Desc.indexOf("C/T") >= 0 ) hasCable = true;
-         if( Octoserve.TunerList[i].Desc.indexOf("C/C2") >= 0 ) hasCable = true;
-         if( Octoserve.TunerList[i].Desc.indexOf("S/S2") >= 0 ) hasSat = true;
+function SetSource(Src, SourceIndex) {}
+function OnLoad() {
+   for(var i = 0; i < Octoserve.TunerList.length; i++ ) {
+      if(Octoserve.TunerList[i]) {
+         if(Octoserve.TunerList[i].Desc.indexOf("C/T") >= 0 || 
+            Octoserve.TunerList[i].Desc.indexOf("C/C2") >= 0) hasCable = true;
+         if(Octoserve.TunerList[i].Desc.indexOf("S/S2") >= 0) hasSat = true;
       }
    }
-   // TODO: differentiate between dvbc and dvbt
-   hasTer = hasCable;
-
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-
+   hasTer = hasCable; xmlhttp.open("GET", url, true); xmlhttp.send();
 }
-
-function DisableButtons(disabled)
-{
+function DisableButtons(disabled) {
    document.getElementById("EpgButton").disabled = disabled;
    document.getElementById("ScanButton").disabled = disabled;
    document.getElementById("StatusButton").disabled = disabled;
@@ -114,378 +68,308 @@ function DisableButtons(disabled)
    document.getElementById("RestoreButton").disabled = disabled;
    document.getElementById("UploadButton").disabled = disabled;
 }
-
-
 var ScanReq = new XMLHttpRequest();
-
-ScanReq.onreadystatechange=function()
-{
-    if (ScanReq.readyState == 4 )
-    {
-      if( ScanReq.status == 200 )
-         ScanStatus(ScanReq.responseText);
-      else
-      {
+ScanReq.onreadystatechange = function() {
+    if (ScanReq.readyState == 4) {
+      if (ScanReq.status == 200) ScanStatus(ScanReq.responseText);
+      else {
          document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-         document.getElementById("scantext").firstChild.nodeValue = "Error " + ScanReq.status;
-         DisableButtons(false);
+         document.getElementById("scantext").firstChild.nodeValue = 
+            "Error " + ScanReq.status; DisableButtons(false);
       }
     }
 }
-
-function GetStatus()
-{
-   ScanReq.open("GET", "/channelscan.lua?select=status&t=" + Math.random(), true);
-   ScanReq.send();
+function GetStatus() { 
+  ScanReq.open("GET", "/channelscan.lua?select=status&t="+Math.random(), true); 
+  ScanReq.send(); 
 }
-
-function ScanStatus(response)
-{
-   var s = JSON.parse(response);
-   var done = true;
-   if( s.status )
-   {
-      if( s.status == "active" )
-      {
+function ScanStatus(response) {
+   var s = JSON.parse(response), done = true;
+   if(s.status) {
+      if(s.status == "active") {
          document.getElementById("scancount").firstChild.nodeValue = s.count;
-         document.getElementById("scantext").firstChild.nodeValue = s.msg;
+         document.getElementById("scantext").firstChild.nodeValue = s.msg; 
          done = false;
-      }
-      else if( s.status == "busy" )
-      {
-         document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
+      } else if(s.status == "busy") {
+         document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
          document.getElementById("scantext").firstChild.nodeValue = "BUSY";
-      }
-      else if( s.status == "done" )
-      {
-         var sec = "";
-         if( StartTime )
-         {
-            var t = new Date() - StartTime;
-            sec = ", time: " + Math.floor(t/1000) + " seconds";
-            StartTime = null;
+      } else if(s.status == "done") {
+         var sec = ""; 
+         if(StartTime) { 
+           var t = new Date() - StartTime; 
+           sec = ", time: " + Math.floor(t/1000) + " seconds"; StartTime = null; 
          }
-
-         document.getElementById("scancount").firstChild.nodeValue = s.count;
+         document.getElementById("scancount").firstChild.nodeValue = s.count; 
          document.getElementById("scantext").firstChild.nodeValue = s.msg + sec;
-      }
-      else if( s.status == "deleted" )
-      {
+      } else if(s.status == "deleted") {
+         document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
+         document.getElementById("scantext").firstChild.nodeValue = 
+            "Channel list deleted";
+      } else if(s.status == "restored") {
          document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-         document.getElementById("scantext").firstChild.nodeValue = "Channel list deleted";
-      }
-      else if( s.status == "restored" )
-      {
-         document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-         if( s.count == 0 )
-            document.getElementById("scantext").firstChild.nodeValue = "Nothing restored";
-         else
-            document.getElementById("scantext").firstChild.nodeValue = "Previous channel list restored";
-      }
-      else if( s.status == "error" )
-      {
-         document.getElementById("scancount").firstChild.nodeValue = "Error";
+         document.getElementById("scantext").firstChild.nodeValue = 
+            (s.count == 0) ? "Nothing restored" : "Previous list restored";
+      } else if(s.status == "error") {
+         document.getElementById("scancount").firstChild.nodeValue = "Error"; 
          document.getElementById("scantext").firstChild.nodeValue = s.msg;
-      }
-      else if( s.status == "updated" )
-      {
-         document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-         document.getElementById("scantext").firstChild.nodeValue = s.msg + " updated";
-      }
-      else if( s.status == "retry" )
-      {
-         done = false;
-      }
+      } else if(s.status == "updated") {
+         document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
+         document.getElementById("scantext").firstChild.nodeValue = 
+            s.msg + " updated";
+      } else if(s.status == "retry") { done = false; }
    }
-
-   if( done )
-   {
-      DisableButtons(false);
-   }
-   else
-      window.setTimeout(GetStatus,500);
+   if(done) { DisableButtons(false); } else window.setTimeout(GetStatus, 500);
 }
-
-
-function InitiateScan()
-{
-   DisableButtons(true);
-
-   var param = "";
-   for(var i = 1; i < document.Cable.Select.options.length; i += 1)
-   {
-      if( document.Cable.Select.options[i].selected )
-         param = param + "&key=" + document.Cable.Select.options[i].value;
+function InitiateScan() {
+   DisableButtons(true); var param = "";
+   for(var i = 1; i < document.Cable.Select.options.length; i += 1) { 
+     if(document.Cable.Select.options[i].selected) 
+       param = param + "&key=" + document.Cable.Select.options[i].value; 
    }
-   for(var i = 1; i < document.Satellite1.Select.options.length; i += 1)
-   {
-      if( document.Satellite1.Select.options[i].selected )
-         param = param + "&key=" + document.Satellite1.Select.options[i].value + ".1";
+   for(var i = 1; i < document.Satellite1.Select.options.length; i += 1) { 
+     if(document.Satellite1.Select.options[i].selected) 
+       param = param + "&key=" + document.Satellite1.Select.options[i].value + ".1"; 
    }
-   for(var i = 1; i < document.Satellite2.Select.options.length; i += 1)
-   {
-      if( document.Satellite2.Select.options[i].selected )
-         param = param + "&key=" + document.Satellite2.Select.options[i].value + ".2";
+   for(var i = 1; i < document.Satellite2.Select.options.length; i += 1) { 
+     if(document.Satellite2.Select.options[i].selected) 
+       param = param + "&key=" + document.Satellite2.Select.options[i].value + ".2"; 
    }
-   for(var i = 1; i < document.Satellite3.Select.options.length; i += 1)
-   {
-      if( document.Satellite3.Select.options[i].selected )
-         param = param + "&key=" + document.Satellite3.Select.options[i].value + ".3";
+   for(var i = 1; i < document.Satellite3.Select.options.length; i += 1) { 
+     if(document.Satellite3.Select.options[i].selected) 
+       param = param + "&key=" + document.Satellite3.Select.options[i].value + ".3"; 
    }
-   for(var i = 1; i < document.Satellite4.Select.options.length; i += 1)
-   {
-      if( document.Satellite4.Select.options[i].selected )
-         param = param + "&key=" + document.Satellite4.Select.options[i].value + ".4";
+   for(var i = 1; i < document.Satellite4.Select.options.length; i += 1) { 
+     if(document.Satellite4.Select.options[i].selected) 
+       param = param + "&key=" + document.Satellite4.Select.options[i].value + ".4"; 
    }
-
-   if( param != "" )
-   {
-      ScanReq.open("POST", "/channelscan.lua", true);
-      ScanReq.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+   if(param != "") {
+      ScanReq.open("POST", "/channelscan.lua", true); 
+      ScanReq.setRequestHeader("Content-type", 
+         "application/x-www-form-urlencoded");
       ScanReq.send("select=scan" + param + "&sitables=1&sort=1&restartdms=1");
-      document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-      document.getElementById("scantext").firstChild.nodeValue = "Scanning...";
+      document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
+      document.getElementById("scantext").firstChild.nodeValue = "Scanning..."; 
       StartTime = new Date();
-   }
-   else
-   {
-      document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-      document.getElementById("scantext").firstChild.nodeValue = "\u00A0";
+   } else { 
+      document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
+      document.getElementById("scantext").firstChild.nodeValue = "\u00A0"; 
    }
 }
-
-function InitiateEPGScan()
-{
-   DisableButtons(true);
-   ScanReq.open("POST", "/channelscan.lua", true);
+function InitiateEPGScan() {
+   DisableButtons(true); ScanReq.open("POST", "/channelscan.lua", true); 
    ScanReq.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-   ScanReq.send("select=epg");
-   document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
-   document.getElementById("scantext").firstChild.nodeValue = "Scanning...";
+   ScanReq.send("select=epg"); 
+   document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
+   document.getElementById("scantext").firstChild.nodeValue = "Scanning..."; 
    StartTime = new Date();
 }
-
-function PollStatus()
-{
-   DisableButtons(true);
-   GetStatus();
+function PollStatus() { DisableButtons(true); GetStatus(); }
+  function DeleteScan(all) { 
+  DisableButtons(true); 
+  ScanReq.open("POST", "/channelscan.lua", true); 
+  ScanReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); 
+  ScanReq.send("select=delete" + (all ? "&all=true" : "")); 
 }
-
-function DeleteScan(all)
-{
-   DisableButtons(true);
-   ScanReq.open("POST", "/channelscan.lua", true);
-   ScanReq.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-   ScanReq.send("select=delete" + (all ? "&all=true" : ""));
+function RestoreScan() { 
+  DisableButtons(true); 
+  ScanReq.open("POST", "/channelscan.lua", true); 
+  ScanReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded"); 
+  ScanReq.send("select=restore"); 
 }
-
-function RestoreScan()
-{
-   DisableButtons(true);
-   ScanReq.open("POST", "/channelscan.lua", true);
-   ScanReq.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-   ScanReq.send("select=restore");
-}
-
-
-function Uploader(event)
-{
-   event.preventDefault();
-   document.getElementById("scancount").firstChild.nodeValue = "\u00A0";
+function Uploader(event) {
+   event.preventDefault(); 
+   document.getElementById("scancount").firstChild.nodeValue = "\u00A0"; 
    document.getElementById("scantext").firstChild.nodeValue = "\u00A0";
    var fileSelect = document.getElementById("UploadList");
-   if( fileSelect.files.length > 0 )
-   {
-      var formData = new FormData();
-      formData.append('filename', fileSelect.files[0], fileSelect.files[0].name)
+   if(fileSelect.files.length > 0) {
+      var formData = new FormData(); 
+      formData.append('filename', fileSelect.files[0], fileSelect.files[0].name); 
       DisableButtons(true);
-      ScanReq.open("POST", "/channelscan.lua", true);
+      ScanReq.open("POST", "/channelscan.lua", true); 
       ScanReq.send(formData);
    }
 }
-
 </script>
-
 </head>
 <body onload="OnLoad()">
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable">
-  <colgroup>
-    <col style="width: 182px"/>
-    <col style="width: 728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <table cellpadding="2px" class="center-div">
-          <tr id="trCable" style="display:none">
-            <td>Cable</td>
-            <td style="text-align:right">
-              <form name="Cable" action="">
-                <select name="Select" size="1" style="width: 300px" onchange="SetSource(0,document.Cable.Select.selectedIndex)" >
-                </select>
-              </form>
-            </td>
-          </tr>
-          <tr id="trSat1" style="display:none">
-            <td>Satellite 1</td>
-            <td style="text-align:right">
-              <form name="Satellite1" action="">
-                <select name="Select" size="1" style="width: 300px" onchange="SetSource(1,document.Satellite1.Select.selectedIndex)" >
-                </select>
-              </form>
-            </td>
-          </tr>
-          <tr id="trSat2" style="display:none">
-            <td>Satellite 2</td>
-            <td style="text-align:right">
-              <form name="Satellite2" action="">
-                <select name="Select" size="1" style="width: 300px" onchange="SetSource(2,document.Satellite2.Select.selectedIndex)" >
-                </select>
-              </form>
-            </td>
-          </tr>
-          <tr id="trSat3" style="display:none">
-            <td>Satellite 3</td>
-            <td style="text-align:right">
-              <form name="Satellite3" action="">
-                <select name="Select" size="1" style="width: 300px" onchange="SetSource(3,document.Satellite3.Select.selectedIndex)" >
-                </select>
-              </form>
-            </td>
-          </tr>
-          <tr id="trSat4" style="display:none">
-            <td>Satellite 4</td>
-            <td style="text-align:right">
-              <form name="Satellite4" action="">
-                <select name="Select" size="1" style="width: 300px" onchange="SetSource(4,document.Satellite4.Select.selectedIndex)" >
-                </select>
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-            <td style="text-align:right">
-               <form action="">
-                 <input id="StatusButton" type="Button" value="Get Status" onclick="PollStatus()" >
-                 <input id="ScanButton" type="Button" value="Start Channel Scan" onclick="InitiateScan()" >
-                 <input id="EpgButton" type="Button" value="Start EPG Scan" onclick="InitiateEPGScan()" >
-               </form>
-            </td>
-          </tr>
-          <tr>
-            <td>
-               <div id="scancount" style="text-align:right">&nbsp;</div>
-            </td>
-            <td>
-               <div id="scantext" style="text-align:left">&nbsp;</div>
-            </td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-            <td style="text-align:right">
-               <form action="">
-                 <input id="DeleteButton" type="Button" value="Delete Channel List" onclick="DeleteScan()" >
-                 <input id="RestoreButton" type="Button" value="Restore Previous Channel List" onclick="RestoreScan()" >
-               </form>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2" style="text-align:right">
-              <form action="" method="post" enctype="multipart/form-data" onsubmit="Uploader(event)">
-                <input id="UploadList" type="file" name="filename" value="*.json" size="30" accept=".json">
-                <input id="UploadButton" type="submit" value="Upload">
-              </form>
-            </td>
-          </tr>
-        </table>
-        <hr/>
-        <div style="text-align: center">
-            <h4>Downloads</h4>
-            Channel List:
-               &nbsp;<a href="/channellist.lua?select=json">JSON</a>
-               &nbsp;<a href="/channellist.lua?select=m3u">M3U</a>
-            <br/>
-            Transponder List:
-               &nbsp;<a href="/channellist.lua?select=tl">Current</a>
-               &nbsp;<a href="/channellist.lua?select=stl">Default</a>
-               <br/>
-               <form action="">
-                 <input id="DeleteAllButton" type="Button" value="Delete All" onclick="DeleteScan(true)" >
-               </form>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
+
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Channel Lists & Scan</h1>
+          <h2>Kanalsuche verwalten und Senderlisten konfigurieren</h2>
         </div>
 
-        <hr/>
-        <h4 style="text-align: center">Old Format Lists</h4>
-        <table cellpadding="2px" class="center-div">
-          <tr>
-            <td>System Channel Database</td>
-            <td>
-              <table>
-                <tr>
-                  <td>
-                    <form action="dlchannels.lua" method="get">
-                      <input type="submit" value="Download tar.gz" >
-                      <input type="hidden" name="select" value="system" >
-                    </form>
-                  </td>
-                  <td>
-                    <form action="dlchannels.lua" method="get">
-                      <input type="submit" value="Download zip"  disabled >
-                      <input type="hidden" name="select" value="system" >
-                    </form>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td>User Channel Database</td>
-            <td>
-              <table>
-                <tr>
-                  <td>
-                    <form action="dlchannels.lua" method="get">
-                      <input type="submit" value="Download tar.gz">
-                      <input type="hidden" name="select" value="user" >
-                    </form>
-                  </td>
-                  <td>
-                    <form action="dlchannels.lua" method="get">
-                      <input type="submit" value="Download zip"  disabled >
-                      <input type="hidden" name="select" value="user" >
-                    </form>
-                  </td>
-                  <td>
-                    <form action="delchannels.lua" method="get">
-                      <input type="submit" value="Delete">
-                    </form>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <form action="uplchannels.lua" method="post" enctype="multipart/form-data">
-                <input type="file" name="filename" value="*.gz" size="30" accept="application/zip,application/gzip">
-                <input type="submit" value="Upload">
-              </form>
-            </td>
-          </tr>
-        </table>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+        <div class="dashboard-grid">
+          
+          <!-- Linke Spalte: Konfiguration -->
+          <section class="card">
+            <h3>Suchlauf konfigurieren</h3>
+            <div class="form-grid">
+              
+              <div id="trCable" class="form-group row-align" style="display:none">
+                <label>Cable:</label>
+                <form name="Cable" action="">
+                  <select name="Select" class="form-control width-auto"></select>
+                </form>
+              </div>
 
+              <div id="trSat1" class="form-group row-align" style="display:none">
+                <label>Satellite 1:</label>
+                <form name="Satellite1" action="">
+                  <select name="Select" class="form-control width-auto"></select>
+                </form>
+              </div>
+
+              <div id="trSat2" class="form-group row-align" style="display:none">
+                <label>Satellite 2:</label>
+                <form name="Satellite2" action="">
+                  <select name="Select" class="form-control width-auto"></select>
+                </form>
+              </div>
+
+              <div id="trSat3" class="form-group row-align" style="display:none">
+                <label>Satellite 3:</label>
+                <form name="Satellite3" action="">
+                  <select name="Select" class="form-control width-auto"></select>
+                </form>
+              </div>
+
+              <div id="trSat4" class="form-group row-align" style="display:none">
+                <label>Satellite 4:</label>
+                <form name="Satellite4" action="">
+                  <select name="Select" class="form-control width-auto"></select>
+                </form>
+              </div>
+
+            </div>
+
+            <div class="button-container margin-top-only">
+              <input id="StatusButton" type="button" class="btn btn-secondary" 
+                     value="Get Status" onclick="PollStatus()">
+              <input id="ScanButton" type="button" class="btn btn-primary" 
+                     value="Start Channel Scan" onclick="InitiateScan()">
+              <input id="EpgButton" type="button" class="btn btn-secondary" 
+                     value="Start EPG Scan" onclick="InitiateEPGScan()">
+            </div>
+
+            <div id="scan-status-box" class="status-display-box">
+              <span id="scancount" class="status-count">&nbsp;</span>
+              <span id="scantext" class="status-msg">&nbsp;</span>
+            </div>
+
+            <hr class="card-divider"/>
+
+            <h3>Listen-Verwaltung</h3>
+            <div class="button-container">
+              <input id="DeleteButton" type="button" class="btn btn-danger" 
+                     value="Delete Channel List" onclick="DeleteScan()">
+              <input id="RestoreButton" type="button" class="btn btn-secondary" 
+                     value="Restore Previous List" onclick="RestoreScan()">
+            </div>
+
+            <form action="" method="post" enctype="multipart/form-data" 
+                  onsubmit="Uploader(event)" class="upload-form margin-top">
+              <div class="file-upload-wrapper">
+                <input id="UploadList" type="file" name="filename" 
+                       accept=".json" class="file-input">
+                <input id="UploadButton" type="submit" class="btn btn-primary" 
+                       value="Upload JSON">
+              </div>
+            </form>
+          </section>
+
+          <!-- Rechte Spalte: Downloads & Legacy -->
+          <section class="card">
+            <h3>Kanallisten Downloads</h3>
+            <div class="download-list">
+              
+              <div class="download-item">
+                <strong>Channel List:</strong>
+                <div class="link-group">
+                  <a href="/channellist.lua?select=json" class="btn-link">JSON</a>
+                  <a href="/channellist.lua?select=m3u" class="btn-link">M3U</a>
+                </div>
+              </div>
+
+              <div class="download-item">
+                <strong>Transponder List:</strong>
+                <div class="link-group">
+                  <a href="/channellist.lua?select=tl" class="btn-link">Current</a>
+                  <a href="/channellist.lua?select=stl" class="btn-link">Default</a>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="margin-top">
+              <input id="DeleteAllButton" type="button" class="btn btn-danger btn-block" 
+                     value="Delete All Lists & Databases" onclick="DeleteScan(true)">
+            </div>
+
+            <hr class="card-divider"/>
+
+            <h3>Altes Listenformat (Legacy)</h3>
+            <div class="data-table-alt">
+              
+              <div class="table-alt-row">
+                <span class="row-label">System Channel DB:</span>
+                <div class="action-cell">
+                  <form action="dlchannels.lua" method="get">
+                    <input type="submit" class="btn btn-secondary btn-sm" value="Download tar.gz">
+                    <input type="hidden" name="select" value="system">
+                  </form>
+                  <form action="dlchannels.lua" method="get">
+                    <input type="submit" class="btn btn-secondary btn-sm" value="Download zip" disabled>
+                    <input type="hidden" name="select" value="system">
+                  </form>
+                </div>
+              </div>
+
+              <div class="table-alt-row">
+                <span class="row-label">User Channel DB:</span>
+                <div class="action-cell">
+                  <form action="dlchannels.lua" method="get">
+                    <input type="submit" class="btn btn-secondary btn-sm" value="Download tar.gz">
+                    <input type="hidden" name="select" value="user">
+                  </form>
+                  <form action="dlchannels.lua" method="get">
+                    <input type="submit" class="btn btn-secondary btn-sm" value="Download zip" disabled>
+                    <input type="hidden" name="select" value="user">
+                  </form>
+                  <form action="delchannels.lua" method="get">
+                    <input type="submit" class="btn btn-danger btn-sm" value="Delete">
+                  </form>
+                </div>
+              </div>
+
+            </div>
+
+            <form action="uplchannels.lua" method="post" 
+                  enctype="multipart/form-data" class="upload-form margin-top-heavy">
+              <div class="file-upload-wrapper">
+                <input type="file" name="filename" 
+                       accept="application/zip,application/gzip" class="file-input">
+                <input type="submit" class="btn btn-primary btn-sm" value="Upload Backup">
+              </div>
+            </form>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+

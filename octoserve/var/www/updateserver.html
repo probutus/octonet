@@ -1,79 +1,136 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<!-- Add page scripts here -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - Update Check</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  <!-- Included scripts -->
+  <script type="text/javascript" src="/systeminfo.lua"></script>
 
-<script type="text/javascript">
+  <!-- Page scripts -->
+  <script type="text/javascript">
+  var isChecking = false;
+  var UpdateAvailable = false;
 
-var xmlhttp = new XMLHttpRequest();
-var url = "/updateserver.lua";
-
-xmlhttp.onreadystatechange=function() {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        myFunction(xmlhttp.responseText);
+  function FWVersion(fwdate) {
+    if (fwdate.length > 0) {
+      var date = new Date(1);
+      date.setUTCDate(fwdate.substr(4,2));
+      date.setUTCFullYear("20" + fwdate.substr(0,2));
+      date.setUTCMonth(fwdate.substr(2,2) - 1);
+      date.setUTCHours(fwdate.substr(6,2));
+      date.setUTCMinutes(fwdate.substr(8,2));
+      var ds = date.toGMTString();
+      return (ds.substring(5, ds.length - 7));
     }
-}
+    return ("?");
+  }
 
-function myFunction(response) {
-    var p = JSON.parse(response);
-    var el = document.getElementById("userver");
-    el.value = p.UpdateServer;
-}
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == 4) {
+      if (xmlhttp.status == 200) {
+        myFunction(xmlhttp.responseText);
+      }
+      isChecking = false;
+    }
+  }
 
-function OnLoad()
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
+  function Request(url) {
+     xmlhttp.open("GET", url, true);
+     xmlhttp.send();
+  }
 
-</script>
+  function myFunction(response) {
+      var UpdateStatus = JSON.parse(response);
+      var statusBox = document.getElementById("scan-status-box");
+      if (statusBox) statusBox.style.display = "flex";
 
+      if (UpdateStatus.Info != "") {
+        document.getElementById("UpdateButton").value = "Update starten";    
+        document.getElementById("UpdateButton").className = "btn btn-primary";    
+        document.getElementById("updatemsg").firstChild.nodeValue = 
+          "Neue Firmware / Systempaket verfügbar!";    
+        document.getElementById("updatestatus").firstChild.nodeValue = 
+          "Version: " + FWVersion(UpdateStatus.Info);    
+        UpdateAvailable = true;
+      } else {
+        document.getElementById("updatestatus").firstChild.nodeValue = 
+          "Deine Systemsoftware ist auf dem neuesten Stand.";    
+      }
+      document.getElementById("UpdateButton").disabled = false;    
+  }
+
+  function CheckUpdate() {
+    if (!isChecking) {
+      document.getElementById("UpdateButton").disabled = true;    
+      isChecking = true;
+      if (UpdateAvailable) {
+        location.replace('/doupdate.html');
+      } else {
+        var statusBox = document.getElementById("scan-status-box");
+        if (statusBox) statusBox.style.display = "flex";
+        document.getElementById("updatestatus").firstChild.nodeValue = 
+          "Suche nach Updates...";
+        Request("/update.lua?check");
+      }
+    }
+  }
+  </script>
 </head>
-<body onload="OnLoad()">
+<body>
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <h3 align="center">Select Local Update Server</h3>
-        <table class="table" align="center">
-          <tr>
-            <td>
-               <p/>
-               <form action="updateserver.lua" method="get">
-                  http://
-                  <input id="userver" type="text" name="set" size="30" value="" >
-                  /octonet/
-                  <br><input type="submit" value="Select Local Update Server">
-               </form>
-               <p/>
-               <form action="updateserver.lua" method="get">
-                  <input type="hidden" name="set" value="std" >
-                  <input type="submit" value="Select Standard Update Server">
-               </form>
-            </td>
-         </tr>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
 
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>System Update</h1>
+          <h2>Firmware-Version prüfen und OctopusNet-System aktualisieren</h2>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="card full-width text-center-content">
+            
+            <div class="update-warning-icon">🔄</div>
+            
+            <h3 id="updatemsg" class="margin-bottom">Firmware / System-Paket überprüfen</h3>
+            
+            <p class="update-subtext">
+              Klicke auf den Button, um online nach verfügbaren Aktualisierungen 
+              für deine OctopusNet-Hardware zu suchen.
+            </p>
+
+            <div class="center-content margin-top-heavy">
+              <form action="" class="margin-none">
+                 <input id="UpdateButton" type="button" class="btn btn-secondary" 
+                        value="Prüfen" onclick="CheckUpdate()" />
+              </form>
+            </div>
+
+            <!-- Status-Anzeige (Wird bei Aktivierung eingeblendet) -->
+            <div id="scan-status-box" class="status-display-box justify-center margin-top-heavy" style="display: none;">
+              <span id="scancount" class="status-count">i</span>
+              <span id="updatestatus" class="status-msg font-bold">Initialisiere Suche...</span>
+            </div>
+
+          </section>
+        </div>
+      </main>
+    </div>
+
+  </div>
 </body>
 </html>
+

@@ -1,126 +1,131 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - System Reboot</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  
+  <script type="text/javascript">
+  var xmlhttp = new XMLHttpRequest();
+  var WaitCounter = 0;
 
-<!-- Add page scripts here -->
-<script type="text/javascript">
+  xmlhttp.onreadystatechange = function() {}
 
-var xmlhttp = new XMLHttpRequest();
-
-xmlhttp.onreadystatechange=function()
-{
-}
-
-function Request(url) 
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
-
-function DisableButtons()
-{
-  document.getElementById("RebootButton").disabled  = true;    
-  document.getElementById("RestartOctoButton").disabled  = true;    
-  document.getElementById("RestartDMSButton").disabled  = true;    
-}
-
-function Reboot()
-{
-  DisableButtons();
-  Request("/reboot.lua?sjiwjsiowjs");
-  WaitCounter = 20;
-  document.getElementById("updatestatus").firstChild.nodeValue  = WaitCounter;
-  window.setTimeout(Wait,1000);  
-}
-
-function RestartOcto()
-{
-  DisableButtons();
-  Request("/reboot.lua?restart_octo");
-  WaitCounter = 4;
-  document.getElementById("updatestatus").firstChild.nodeValue  = WaitCounter;
-  window.setTimeout(Wait,1000);  
-}
-
-function RestartDMS()
-{
-  DisableButtons();
-  Request("/reboot.lua?restart_dms");
-  WaitCounter = 4;
-  document.getElementById("updatestatus").firstChild.nodeValue  = WaitCounter;
-  window.setTimeout(Wait,1000);  
-}
-
-function Wait()
-{
-  document.getElementById("updatestatus").firstChild.nodeValue  = WaitCounter;
-  if( WaitCounter == 0 )
-  {
-    location.replace('/index.html');
+  function Request(url) {
+     xmlhttp.open("GET", url, true);
+     xmlhttp.send();
   }
-  else
-  {
-    WaitCounter = WaitCounter - 1;
-    window.setTimeout(Wait,1000);  
+
+  var elementsToDisable = [
+    "RebootButton", 
+    "RestartOctoButton", 
+    "RestartDMSButton"
+  ];
+
+  function DisableButtons() {
+    for (var i = 0; i < elementsToDisable.length; i++) {
+      var btn = document.getElementById(elementsToDisable[i]);
+      if (btn) btn.disabled = true;
+    }
   }
-}
 
-</script>
+  function StartCountdown(seconds, message) {
+    DisableButtons();
+    WaitCounter = seconds;
+    var statusBox = document.getElementById("scan-status-box");
+    if (statusBox) statusBox.style.display = "flex";
+    document.getElementById("scancount").firstChild.nodeValue = WaitCounter;
+    document.getElementById("scantext").firstChild.nodeValue = message;
+    window.setTimeout(Wait, 1000);
+  }
 
+  function Reboot() {
+    Request("/reboot.lua?sjiwjsiowjs");
+    StartCountdown(20, "Gerät startet neu...");
+  }
+
+  function RestartOcto() {
+    Request("/reboot.lua?restart_octo");
+    StartCountdown(4, "SAT>IP Server wird neu gestartet...");
+  }
+
+  function RestartDMS() {
+    Request("/reboot.lua?restart_dms");
+    StartCountdown(4, "DMS wird neu gestartet...");
+  }
+
+  function Wait() {
+    document.getElementById("scancount").firstChild.nodeValue = WaitCounter;
+    if (WaitCounter == 0) {
+      location.replace('/index.html');
+    } else {
+      WaitCounter = WaitCounter - 1;
+      window.setTimeout(Wait, 1000);
+    }
+  }
+  </script>
 </head>
 <body>
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <table class="table" align="center">
-          <tr>
-            <td id="updatestatus">&nbsp;&nbsp;</td>
-          </tr>
-          <tr>
-            <td>
-              <form action="">
-                 <input id="RebootButton" type="Button" value="Reboot" onclick="Reboot()" />
-              </form>
-            </td>
-          <tr>                  
-          <tr>
-            <td>
-              <form action="">
-                 <input id="RestartOctoButton" type="Button" value="Restart Server" onclick="RestartOcto()" />
-              </form>
-            </td>
-          <tr>                  
-          <tr>
-            <td>
-              <form action="">
-                 <input id="RestartDMSButton" type="Button" value="Restart DMS" onclick="RestartDMS()" />
-              </form>
-            </td>
-          <tr>                  
-        </table>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
 
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Systemsteuerung & Neustart</h1>
+          <h2>Dienste steuern oder die OctopusNet-Hardware neu starten</h2>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Verfügbare Aktionen</h3>
+            
+            <p class="update-subtext margin-bottom">
+              Wähle die gewünschte Aktion aus. Während der Ausführung wird ein 
+              Countdown angezeigt, danach wirst du automatisch zur Startseite 
+              weitergeleitet.
+            </p>
+
+            <div class="button-container justify-center">
+              <form action="" class="inline-form">
+                 <input id="RestartOctoButton" type="button" class="btn btn-secondary" 
+                        value="Restart SAT>IP Server" onclick="RestartOcto()" />
+              </form>
+              
+              <form action="" class="inline-form">
+                 <input id="RestartDMSButton" type="button" class="btn btn-secondary" 
+                        value="Restart DMS Service" onclick="RestartDMS()" />
+              </form>
+
+              <form action="" class="inline-form">
+                 <input id="RebootButton" type="button" class="btn btn-danger" 
+                        value="Hardware Reboot" onclick="Reboot()" />
+              </form>
+            </div>
+
+            <!-- Countdown Status-Anzeige (Standardmäßig unsichtbar) -->
+            <div id="scan-status-box" class="status-display-box justify-center margin-top-heavy" style="display: none;">
+              <span id="scancount" class="status-count">--</span>
+              <span id="scantext" class="status-msg font-bold">Bitte warten...</span>
+            </div>
+
+          </section>
+        </div>
+      </main>
+    </div>
+
+  </div>
 </body>
 </html>
+

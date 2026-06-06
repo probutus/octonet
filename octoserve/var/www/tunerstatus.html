@@ -1,130 +1,124 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add additional scripts and settings here -->
-<meta http-equiv="Pragma" content="no-cache" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>OctopusNet - Tuner Status</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  
+  <script type="text/javascript">
+  var xmlhttp = new XMLHttpRequest();
+  var url = "/octoserve/tunerstatus.json";
 
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-
-var xmlhttp = new XMLHttpRequest();
-var url = "/octoserve/tunerstatus.json";
-
-xmlhttp.onreadystatechange=function()
-{
-    if (xmlhttp.readyState == 4 )
-    {
-      if( xmlhttp.status == 200 )
-         myFunction(xmlhttp.responseText);
+  xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+       myFunction(xmlhttp.responseText);
     }
-}
-
-function myFunction(response)
-{
-   try 
-   {
-      var tl = JSON.parse(response);   
-      Show(tl.TunerList);
-   }
-   catch(err) {}
-   window.setTimeout(renew,1000);  
-}
-
-
-function Show(TunerList)
-{
-  for( var i = 0; i < TunerList.length ; i++ )
-  {
-    if( TunerList[i].Status == "Active" && TunerList[i].Lock )
-    {
-        document.getElementById("tdStatus"+i).firstChild.nodeValue  = "Locked";
-        document.getElementById("tdStrength"+i).firstChild.nodeValue  = (TunerList[i].Strength/1000+108.75).toFixed(1)+" dBµV";
-        document.getElementById("tdSNR"+i).firstChild.nodeValue  = (TunerList[i].SNR/1000).toFixed(1) + " dB";
-        document.getElementById("tdQuality"+i).firstChild.nodeValue  = TunerList[i].Quality.toFixed(0) + "%";
-   }
-   else
-   {
-      if( TunerList[i].Status == "Active" )
-        document.getElementById("tdStatus"+i).firstChild.nodeValue  = "No Signal";
-      else
-        document.getElementById("tdStatus"+i).firstChild.nodeValue  = "IDLE";
-      document.getElementById("tdStrength"+i).firstChild.nodeValue  = "";
-      document.getElementById("tdSNR"+i).firstChild.nodeValue  = "";
-      document.getElementById("tdQuality"+i).firstChild.nodeValue  = "";
-    }
-    document.getElementById("trTuner"+i).style.display = "table-row";    
   }
-}
 
-function renew()
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
+  function myFunction(response) {
+     try {
+        var tl = JSON.parse(response);   
+        Show(tl.TunerList);
+     } catch(err) {}
+     window.setTimeout(renew, 1000);  
+  }
 
-function OnLoad()
-{
-   window.setTimeout(renew,1000);  
-}
+  function Show(TunerList) {
+    for (var i = 0; i < TunerList.length; i++) {
+      var statusTd = document.getElementById("tdStatus" + i);
+      
+      if (TunerList[i].Status == "Active" && TunerList[i].Lock) {
+          statusTd.innerHTML = '<span class="status-badge badge-locked">Locked</span>';
+          document.getElementById("tdStrength" + i).firstChild.nodeValue = 
+            (TunerList[i].Strength / 1000 + 108.75).toFixed(1) + " dBµV";
+          document.getElementById("tdSNR" + i).firstChild.nodeValue = 
+            (TunerList[i].SNR / 1000).toFixed(1) + " dB";
+          document.getElementById("tdQuality" + i).firstChild.nodeValue = 
+            TunerList[i].Quality.toFixed(0) + "%";
+     } else {
+        if (TunerList[i].Status == "Active") {
+          statusTd.innerHTML = '<span class="status-badge badge-nosignal">No Signal</span>';
+        } else {
+          statusTd.innerHTML = '<span class="status-badge badge-idle">IDLE</span>';
+        }
+        document.getElementById("tdStrength" + i).firstChild.nodeValue = "-";
+        document.getElementById("tdSNR" + i).firstChild.nodeValue = "-";
+        document.getElementById("tdQuality" + i).firstChild.nodeValue = "-";
+      }
+      document.getElementById("trTuner" + i).style.display = "flex";    
+    }
+  }
 
-</script>
+  function renew() {
+     xmlhttp.open("GET", url, true);
+     xmlhttp.send();
+  }
 
+  function OnLoad() {
+     window.setTimeout(renew, 1000);  
+  }
+  </script>
 </head>
 <body onload="OnLoad()">
-<table class="maintable">
-  <colgroup>
-    <col style="width:182px"/>
-    <col style="width:728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="maintd">
-      <div class="content">
-        <!-- Begin Content -->
-          <table id="tunerstatus" style="margin:auto">
-             <colgroup>
-               <col style="width:80px"/>
-               <col style="width:140px"/>
-               <col style="width:140px"/>
-               <col style="width:140px"/>
-               <col style="width:140px"/>
-             </colgroup>
-             <tr>
-               <th>Tuner</th>
-               <th>Lock</th>
-               <th>Strength</th>
-               <th>SNR</th>
-               <th>Quality</th>
-             </tr>
-             <script type="text/javascript">
-                for( var i = 0; i < 12 ; i++ )
-                {    
-                  document.write('<tr id="trTuner'+i+'" style="display:none">');
-                  document.write('<td>' + (i+1) + '</td>');  
-                  document.write('<td id="tdStatus'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdStrength'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdSNR'+i+'">&nbsp;</td>');
-                  document.write('<td id="tdQuality'+i+'">&nbsp;</td>');    
-                  document.write('</tr>');
-                }
-             </script>
-          </table>
-        
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
+
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Hardware Tuner Status</h1>
+          <h2>Echtzeit-Empfangswerte, Signalstärken und Rauschabstände (SNR)</h2>
+        </div>
+
+        <div class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Tuner Übersicht</h3>
+            
+            <div class="table-responsive-wrapper">
+              <table id="tunerstatus" class="data-table display-table-headers tuner-status-table">
+                <thead>
+                  <tr>
+                    <th>Tuner</th>
+                    <th>Lock / Status</th>
+                    <th>Signalstärke</th>
+                    <th>SNR (Rauschen)</th>
+                    <th>Qualität</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <script type="text/javascript">
+                    for( var i = 0; i < 12 ; i++ )
+                    {    
+                      document.write('<tr id="trTuner' + i + '" style="display:none">');
+                      document.write('<td>' + (i + 1) + '</td>');  
+                      document.write('<td id="tdStatus' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdStrength' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdSNR' + i + '">&nbsp;</td>');
+                      document.write('<td id="tdQuality' + i + '">&nbsp;</td>');    
+                      document.write('</tr>');
+                    }
+                  </script>
+                </tbody>
+              </table>
+            </div>
+
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+

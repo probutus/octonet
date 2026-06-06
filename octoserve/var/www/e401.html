@@ -1,41 +1,57 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-</script>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - 401 Unauthorized</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
 </head>
 <body>
+  <div class="app-container">
+    
+    <!-- Identischer Header -->
+    <header class="main-header">
+      <a href="http://www.digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
+    <div class="content-wrapper">
+      <!-- Identische Navigation links -->
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <H1>401: admin login required</H1>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+      <!-- Hauptinhalt rechts -->
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Zugriff verweigert</h1>
+          <h2>HTTP Error 401 - Nicht autorisiert</h2>
+        </div>
 
+        <!-- Zentrierte Fehler-Card -->
+        <div class="dashboard-grid">
+          <section class="card full-width text-center">
+            <div class="update-warning-icon">🔒</div>
+            <h2 class="text-danger margin-bottom">
+              401: Admin Login Required
+            </h2>
+            <p class="update-subtext" style="margin-bottom: 20px;">
+              Für den Zugriff auf diese Seite sind Administrator-Rechte 
+              erforderlich. Bitte melde dich mit deinem Admin-Konto an.
+            </p>
+            <div class="center-content">
+              <a href="/index.html" class="btn btn-primary">
+                Zurück zur Hauptseite
+              </a>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+  </div>
 </body>
 </html>
+

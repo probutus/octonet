@@ -1,161 +1,173 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<script type="text/javascript" src="/mclist.lua"></script>
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-function OnLoad()
-{
-  if( Multicast.length == 0 )
-  {
-    document.getElementById("dlcurrent").disabled  = true;
-    document.getElementById("dlm3u").disabled  = true;
-    document.getElementById("MulticastTable").style.display = "none";
-  }
-}
-
-function WriteMCTable()
-{
-  if( Multicast.length > 0 )
-  {
-    for(var i = 0; i < Multicast.length; i = i + 1)
-    {
-      document.write('<tr>')
-      document.write('<td>'+(i+1)+'</td>')
-      document.write('<td>'+Multicast[i].Title+'</td>')
-      document.write('<td>'+Multicast[i].Dest+'</td>')
-      if( Multicast[i].LanPorts ) 
-        document.write('<td>'+Multicast[i].LanPorts+'</td>')
-      else
-        document.write('<td>&nbsp;</td>')      
-      document.write('</tr>')
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - Multicast Setup</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  <!-- Included scripts -->
+  <script type="text/javascript" src="/mclist.lua"></script>
+  
+  <!-- Page scripts -->
+  <script type="text/javascript">
+  function OnLoad() {
+    if (Multicast.length == 0) {
+      document.getElementById("dlcurrent").disabled = true;
+      document.getElementById("dlm3u").disabled = true;
+      document.getElementById("MulticastTableBox").style.display = "none";
     }
   }
-}
 
-</script>
-
+  function WriteMCTable() {
+    if (Multicast.length > 0) {
+      for (var i = 0; i < Multicast.length; i = i + 1) {
+        document.write('<tr>');
+        document.write('<td>' + (i + 1) + '</td>');
+        document.write('<td>' + Multicast[i].Title + '</td>');
+        document.write('<td>' + Multicast[i].Dest + '</td>');
+        if (Multicast[i].LanPorts) {
+          document.write('<td>' + Multicast[i].LanPorts + '</td>');
+        } else {
+          document.write('<td>-</td>');
+        }
+        document.write('</tr>');
+      }
+    }
+  }
+  </script>
 </head>
 <body onload="OnLoad()">
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        <h1 align="center">Static Multicast Setup</h1>
-        <div id="MulticastTable">
-          <table cellpadding="2px" align="center" width="80%">
-            <tr>
-              <th>Stream</th>
-              <th>Title</th>
-              <th>Destination</th>
-              <th>Lan-Ports</th>
-            </tr>
-            <script type="text/javascript">WriteMCTable();</script>
-          </table>
-          <p/>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
+
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Static Multicast Setup</h1>
+          <h2>Multicast-Streams konfigurieren und Wiedergabelisten laden</h2>
         </div>
 
-        <table cellpadding="2px" align="center" width="80%">
-          <tr>
-            <td>
-              Current Settings
-            </td>
-            <td>
-              <form action="multicast.lua" method="get">
-                <input id="dlcurrent" type="submit" value="Download" >
-                <input type="hidden" name="select" value="current" >
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              M3U List
-            </td>
-            <td>
-              <form action="multicast.lua" method="get">
-                <input id="dlm3u" type="submit" value="Download" >
-                <input type="hidden" name="select" value="m3u" >
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>
-             Samples
-            </td>
-            <td>
-              <form action="multicast.lua" method="get">
-                <select name="name" size="1"  style="width: 300px">
-                  <option value="astra19e">Astra 19.2</option>
-                  <option value="kabelbw">Kabel BW</option>
-                  <option value="unitymedia">Unity Media</option>
-                </select>
-                <input type="hidden" name="select" value="sample" >
-                <input type="submit" value="Download" >
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>
-             Select Sample
-            </td>
-            <td>
-              <form action="mcconfig.lua" method="get">
-                <select name="name" size="1"  style="width: 300px">
-                  <option value="astra19e">Astra 19.2</option>
-                  <option value="kabelbw">Kabel BW</option>
-                  <option value="unitymedia">Unity Media</option>
-                </select>
-                <input type="hidden" name="select" value="copy" >
-                <input type="submit" value="Select & Enable" >
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <form action="mcconfig.lua" method="post" enctype="multipart/form-data">
-                <input type="file" name="filename" value="*.csv" size="30" accept="text/csv">
-                <input type="submit" value="Upload & Enable">
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <form action="mcconfig.lua" method="get">
-                <input type="submit" value="Disable" >
-                <input type="hidden" name="select" value="disable" >
-              </form>
-            </td>
-          </tr>
-        </table>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+        <!-- Multicast Daten-Tabelle (Ausgeblendet, wenn leer via JS) -->
+        <div id="MulticastTableBox" class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Aktive Multicast Streams</h3>
+            <table class="data-table display-table-headers">
+              <thead>
+                <tr>
+                  <th>Stream</th>
+                  <th>Title</th>
+                  <th>Destination</th>
+                  <th>LAN-Ports</th>
+                </tr>
+              </thead>
+              <tbody>
+                <script type="text/javascript">WriteMCTable();</script>
+              </tbody>
+            </table>
+          </section>
+        </div>
 
+        <!-- Einstellungen & Aktionen -->
+        <div class="dashboard-grid">
+          
+          <!-- Spalte 1: Downloads & Templates -->
+          <section class="card">
+            <h3>Konfiguration & Downloads</h3>
+            <div class="download-list">
+              
+              <div class="download-item">
+                <strong>Current Settings:</strong>
+                <form action="multicast.lua" method="get" class="inline-form">
+                  <input id="dlcurrent" type="submit" class="btn btn-secondary btn-sm" value="Download">
+                  <input type="hidden" name="select" value="current">
+                </form>
+              </div>
+
+              <div class="download-item">
+                <strong>M3U Playlist:</strong>
+                <form action="multicast.lua" method="get" class="inline-form">
+                  <input id="dlm3u" type="submit" class="btn btn-secondary btn-sm" value="Download">
+                  <input type="hidden" name="select" value="m3u">
+                </form>
+              </div>
+
+            </div>
+
+            <hr class="card-divider"/>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Vordefinierte Vorlagen (Samples) herunterladen:</label>
+                <form action="multicast.lua" method="get" class="file-upload-wrapper">
+                  <select name="name" class="form-control width-auto">
+                    <option value="astra19e">Astra 19.2</option>
+                    <option value="kabelbw">Kabel BW</option>
+                    <option value="unitymedia">Unity Media</option>
+                  </select>
+                  <input type="hidden" name="select" value="sample">
+                  <input type="submit" class="btn btn-secondary btn-sm" value="Download">
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <!-- Spalte 2: Uploads & Verwaltung -->
+          <section class="card">
+            <h3>Konfiguration anwenden</h3>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Vorlage direkt aktivieren:</label>
+                <form action="mcconfig.lua" method="get" class="file-upload-wrapper">
+                  <select name="name" class="form-control width-auto">
+                    <option value="astra19e">Astra 19.2</option>
+                    <option value="kabelbw">Kabel BW</option>
+                    <option value="unitymedia">Unity Media</option>
+                  </select>
+                  <input type="hidden" name="select" value="copy">
+                  <input type="submit" class="btn btn-primary btn-sm" value="Select & Enable">
+                </form>
+              </div>
+
+              <hr class="card-divider"/>
+
+              <div class="form-group">
+                <label>Eigene CSV-Liste hochladen:</label>
+                <form action="mcconfig.lua" method="post" enctype="multipart/form-data" class="upload-form">
+                  <div class="file-upload-wrapper">
+                    <input type="file" name="filename" accept="text/csv" class="file-input">
+                    <input type="submit" class="btn btn-primary btn-sm" value="Upload & Enable">
+                  </div>
+                </form>
+              </div>
+
+              <hr class="card-divider"/>
+
+              <div class="form-group text-center">
+                <label class="margin-bottom block">Statische Multicast-Streams komplett abschalten:</label>
+                <form action="mcconfig.lua" method="get">
+                  <input type="hidden" name="select" value="disable">
+                  <input type="submit" class="btn btn-danger btn-block" value="Multicast Deaktivieren">
+                </form>
+              </div>
+
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+

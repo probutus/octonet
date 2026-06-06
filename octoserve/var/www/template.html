@@ -1,63 +1,55 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-</script>
-
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - Template</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  <!-- Hier bei Bedarf zusätzliche Skripte einbinden -->
 </head>
 <body>
 
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-        
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        <p/>
-        bla bla
-        
-        
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+  <div class="app-container">
+    
+    <!-- Identischer Header auf allen Seiten -->
+    <header class="main-header">
+      <a href="http://www.digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
+
+    <div class="content-wrapper">
+      <!-- Identische Navigation links -->
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
+
+      <!-- Hauptinhalt rechts -->
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>Seitenüberschrift</h1>
+          <h2>Untertitel oder kurze Beschreibung der Funktion</h2>
+        </div>
+
+        <!-- Inhaltsbereich verpackt in das flexible Grid- und Card-System -->
+        <div class="dashboard-grid">
+          <section class="card full-width">
+            <h3>Karten-Titel</h3>
+            
+            <p>bla bla</p>
+            <p>bla bla</p>
+            <p>bla bla</p>
+            <p>bla bla</p>
+            <p>bla bla</p>
+            
+          </section>
+        </div>
+      </main>
+    </div>
+
+  </div>
 
 </body>
 </html>
+

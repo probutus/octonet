@@ -1,599 +1,396 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<script type="text/javascript">Octoserve = false;</script>
-<script type="text/javascript" src="/octoserve/serverinfo.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OctopusNet - System Settings</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  <script type="text/javascript" src="/menu.js"></script>
+  <!-- Included scripts -->
+  <script type="text/javascript">Octoserve = false;</script>
+  <script type="text/javascript" src="/octoserve/serverinfo.js"></script>
+  
+  <!-- Page scripts -->
+  <script type="text/javascript">
+  var NewSettings = null;
+  var OldSettings = null;
+  var SupportedDelsys = 0;
+  var DelSysID = new Array();
+  DelSysID[ 0] = "SYS_UNDEFINED"; DelSysID[ 1] = "SYS_DVBC_ANNEX_A";
+  DelSysID[ 2] = "SYS_DVBC_ANNEX_B"; DelSysID[ 3] = "SYS_DVBT";
+  DelSysID[ 4] = "SYS_DSS"; DelSysID[ 5] = "SYS_DVBS";
+  DelSysID[ 6] = "SYS_DVBS2"; DelSysID[ 7] = "SYS_DVBH";
+  DelSysID[ 8] = "SYS_ISDBT"; DelSysID[ 9] = "SYS_ISDBS";
+  DelSysID[10] = "SYS_ISDBC"; DelSysID[11] = "SYS_ATSC";
+  DelSysID[12] = "SYS_ATSCMH"; DelSysID[13] = "SYS_DTMB";
+  DelSysID[14] = "SYS_CMMB"; DelSysID[15] = "SYS_DAB";
+  DelSysID[16] = "SYS_DVBT2"; DelSysID[17] = "SYS_TURBO";
+  DelSysID[18] = "SYS_DVBC_ANNEX_C"; DelSysID[19] = "SYS_DVBC2";
 
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-var NewSettings = null;
-var OldSettings = null;
-
-var SupportedDelsys = 0;
-
-var DelSysID = new Array();
-DelSysID[ 0] = "SYS_UNDEFINED";
-DelSysID[ 1] = "SYS_DVBC_ANNEX_A";
-DelSysID[ 2] = "SYS_DVBC_ANNEX_B";
-DelSysID[ 3] = "SYS_DVBT";
-DelSysID[ 4] = "SYS_DSS";
-DelSysID[ 5] = "SYS_DVBS";
-DelSysID[ 6] = "SYS_DVBS2";
-DelSysID[ 7] = "SYS_DVBH";
-DelSysID[ 8] = "SYS_ISDBT";
-DelSysID[ 9] = "SYS_ISDBS";
-DelSysID[10] = "SYS_ISDBC";
-DelSysID[11] = "SYS_ATSC";
-DelSysID[12] = "SYS_ATSCMH";
-DelSysID[13] = "SYS_DTMB";
-DelSysID[14] = "SYS_CMMB";
-DelSysID[15] = "SYS_DAB";
-DelSysID[16] = "SYS_DVBT2";
-DelSysID[17] = "SYS_TURBO";
-DelSysID[18] = "SYS_DVBC_ANNEX_C";
-DelSysID[19] = "SYS_DVBC2";
-
-var xmlhttp = new XMLHttpRequest();
-var url = "/systemsettings.lua";
-
-xmlhttp.onreadystatechange=function()
-{
-    if (xmlhttp.readyState == 4 )
-    {
-      if( xmlhttp.status == 200 )
-         myFunction(xmlhttp.responseText);
+  var xmlhttp = new XMLHttpRequest();
+  var url = "/systemsettings.lua";
+  xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+       myFunction(xmlhttp.responseText);
     }
-}
-
-function myFunction(response)
-{
-  var settings = JSON.parse(response);
-
-  if( settings.isMaxS8 )
-  {
-    document.getElementById("trMSMode").style.display = "table-row";
-    if( settings.MSMode == "none" )
-      document.getElementById("MSMode").selectedIndex = 0;
-    else if( settings.MSMode == "quattro" )
-      document.getElementById("MSMode").selectedIndex = 2;
-    else
-      document.getElementById("MSMode").selectedIndex = 1;
   }
 
-  document.getElementById("BoxName").value  = settings.BoxName;
-
-  document.getElementById("QOSButton").checked  = settings.vlanEnabled;
-  document.getElementById("TelnetButton").checked  = settings.telnetEnabled;
-  document.getElementById("NODMSButton").checked  = settings.nodmsEnabled;
-  document.getElementById("STRICTButton").checked  = settings.strictEnabled;
-
-  document.getElementById("QOSButton").disabled      = false;
-  document.getElementById("TelnetButton").disabled   = false;
-  document.getElementById("NODMSButton").disabled    = false;
-  document.getElementById("STRICTButton").disabled   = false;
-  document.getElementById("BoxName").disabled        = false;
-  document.getElementById("MSMode").disabled         = false;
-
-  OldSettings = settings;
-  NewSettings = JSON.parse(response);
-  if( Octoserve )
-    NewSettings.DelsysMask = Octoserve.DelsysMask;
-}
-
-function SaveSettings()
-{
-  if( NewSettings )
-  {
-    var param = "";
-    if( OldSettings.BoxName != NewSettings.BoxName )
-    {
-      if( param != "" ) param += "&";
-      param += "boxname=" + encodeURIComponent(NewSettings.BoxName);
-    }
-
-    if( OldSettings.telnetEnabled != NewSettings.telnetEnabled )
-    {
-      if( param != "" ) param += "&";
-      param += "telnet=" + (NewSettings.telnetEnabled?"1":"0");
-    }
-
-    if( OldSettings.vlanEnabled != NewSettings.vlanEnabled )
-    {
-      if( param != "" ) param += "&";
-      param += "vlan=" + (NewSettings.vlanEnabled?"1":"0");
-    }
-
-    if( OldSettings.nodmsEnabled != NewSettings.nodmsEnabled )
-    {
-      if( param != "" ) param += "&";
-      param += "nodms=" + (NewSettings.nodmsEnabled?"1":"0");
-    }
-
-    if( OldSettings.MSMode != NewSettings.MSMode )
-    {
-      if( param != "" ) param += "&";
-      param += "msmode=" + NewSettings.MSMode;
-    }
-
-    if( OldSettings.strictEnabled != NewSettings.strictEnabled )
-    {
-      if( param != "" ) param += "&";
-      param += "strict=" + (NewSettings.strictEnabled?"1":"0");
-    }
-
-    if( Octoserve )
-    {
-      var DelsysMask = NewSettings.DelsysMask;
-      if( DelsysMask != Octoserve.DelsysMask )
-      {
-        if( DelsysMask == SupportedDelsys ) DelsysMask = 0;
-        if( param != "" ) param += "&";
-        param += "delsysmask=" + DelsysMask;
+  function myFunction(response) {
+    var settings = JSON.parse(response);
+    if (settings.isMaxS8) {
+      document.getElementById("trMSMode").style.display = "flex";
+      if (settings.MSMode == "none") {
+        document.getElementById("MSMode").selectedIndex = 0;
+      } else if (settings.MSMode == "quattro") {
+        document.getElementById("MSMode").selectedIndex = 2;
+      } else {
+        document.getElementById("MSMode").selectedIndex = 1;
       }
     }
-
-    document.getElementById("SetButton").disabled = true;
-    if( param != "" )
-    {
-      location.replace('/systemsettings.lua?'+param);
+    document.getElementById("BoxName").value = settings.BoxName;
+    document.getElementById("QOSButton").checked = settings.vlanEnabled;
+    document.getElementById("TelnetButton").checked = settings.telnetEnabled;
+    document.getElementById("NODMSButton").checked = settings.nodmsEnabled;
+    document.getElementById("STRICTButton").checked = settings.strictEnabled;
+    
+    document.getElementById("QOSButton").disabled = false;
+    document.getElementById("TelnetButton").disabled = false;
+    document.getElementById("NODMSButton").disabled = false;
+    document.getElementById("STRICTButton").disabled = false;
+    document.getElementById("BoxName").disabled = false;
+    document.getElementById("MSMode").disabled = false;
+    
+    OldSettings = settings;
+    NewSettings = JSON.parse(response);
+    if (Octoserve) {
+      NewSettings.DelsysMask = Octoserve.DelsysMask;
     }
   }
-}
 
-function ClearSettings()
-{
-  if( NewSettings )
-  {
-    NewSettings.boxname = "";
-    NewSettings.telnetEnabled = false;
-    NewSettings.vlanEnabled = false;
-    NewSettings.nodmsEnabled = false;
-    NewSettings.nodvbtEnabled = false;
-    NewSettings.strictEnabled = false;
-    NewSettings.MSMode = "quad";
-    NewSettings.DelsysMask = 0;
-    SaveSettings();
-  }
-}
-
-function ShowDelsys()
-{
-  if( Octoserve )
-  {
-    SupportedDelsys = 0;
-    for(var i = 0; i < Octoserve.TunerList.length; i++ )
-    {
-      if( Octoserve.TunerList[i] )
-      {
-        SupportedDelsys = SupportedDelsys | Octoserve.TunerList[i].Type;
+  function SaveSettings() {
+    if (NewSettings) {
+      var param = "";
+      if (OldSettings.BoxName != NewSettings.BoxName) {
+        if (param != "") param += "&";
+        param += "boxname=" + encodeURIComponent(NewSettings.BoxName);
+      }
+      if (OldSettings.telnetEnabled != NewSettings.telnetEnabled) {
+        if (param != "") param += "&";
+        param += "telnet=" + (NewSettings.telnetEnabled ? "1" : "0");
+      }
+      if (OldSettings.vlanEnabled != NewSettings.vlanEnabled) {
+        if (param != "") param += "&";
+        param += "vlan=" + (NewSettings.vlanEnabled ? "1" : "0");
+      }
+      if (OldSettings.nodmsEnabled != NewSettings.nodmsEnabled) {
+        if (param != "") param += "&";
+        param += "nodms=" + (NewSettings.nodmsEnabled ? "1" : "0");
+      }
+      if (OldSettings.MSMode != NewSettings.MSMode) {
+        if (param != "") param += "&";
+        param += "msmode=" + NewSettings.MSMode;
+      }
+      if (OldSettings.strictEnabled != NewSettings.strictEnabled) {
+        if (param != "") param += "&";
+        param += "strict=" + (NewSettings.strictEnabled ? "1" : "0");
+      }
+      if (Octoserve) {
+        var DelsysMask = NewSettings.DelsysMask;
+        if (DelsysMask != Octoserve.DelsysMask) {
+          if (DelsysMask == SupportedDelsys) DelsysMask = 0;
+          if (param != "") param += "&";
+          param += "delsysmask=" + DelsysMask;
+        }
+      }
+      document.getElementById("SetButton").disabled = true;
+      if (param != "") {
+        location.replace('/systemsettings.lua?' + param);
       }
     }
+  }
 
-    for(var i = 0; i < DelSysID.length; i++ )
-    {
-      var Element = document.getElementById(DelSysID[i]);
-      if( Element )
-      {
-        if( SupportedDelsys & (1<<i) )
-        {
-          Element.disabled = false;
-          Element.checked = (( Octoserve.DelsysMask & (1<<i)) != 0) || (Octoserve.DelsysMask == 0);
-          Element.parentElement.style.visibility = "visible";
-        }
-        else
-        {
-          Element.disabled = true;
-          Element.checked = false;
-          Element.parentElement.style.visibility = "hidden";
-        }
-      }
-      else
-      {
-        SupportedDelsys &= ~(1<<i);
-      }
-    }
-    for(var i = DelSysID.length; i < 32; i++ )
-    {
-      SupportedDelsys &= ~(1<<i);
+  function ClearSettings() {
+    if (NewSettings) {
+      NewSettings.boxname = ""; NewSettings.telnetEnabled = false;
+      NewSettings.vlanEnabled = false; NewSettings.nodmsEnabled = false;
+      NewSettings.nodvbtEnabled = false; NewSettings.strictEnabled = false;
+      NewSettings.MSMode = "quad"; NewSettings.DelsysMask = 0;
+      SaveSettings();
     }
   }
-}
 
-function OnLoad()
-{
-  xmlhttp.open("GET", url, true);
-  xmlhttp.send();
-  ShowDelsys();
-}
-
-function ChangeBoxName()
-{
-  if( NewSettings )
-  {
-    var s = document.getElementById("BoxName").value;
-    s = s.replace(/[^a-zA-Z0-9@ ()-\/]/g,"");
-    document.getElementById("BoxName").value = s;
-    NewSettings.BoxName = document.getElementById("BoxName").value;
-    document.getElementById("SetButton").disabled = false;
-  }
-}
-
-function Change()
-{
-  if( NewSettings )
-  {
-    NewSettings.MSMode = document.getElementById("MSMode").value;
-    NewSettings.vlanEnabled = document.getElementById("QOSButton").checked;
-    NewSettings.telnetEnabled = document.getElementById("TelnetButton").checked;
-    NewSettings.nodmsEnabled = document.getElementById("NODMSButton").checked;
-    NewSettings.strictEnabled = document.getElementById("STRICTButton").checked;
-    document.getElementById("SetButton").disabled = false;
-  }
-}
-
-function ChangeDelSys(delsys)
-{
-  if( NewSettings )
-  {
-    if( NewSettings.DelsysMask == 0 )
-      NewSettings.DelsysMask = SupportedDelsys;
-
-    var Element = document.getElementById(DelSysID[delsys]);
-    if( Element )
-    {
-      if( Element.checked )
-      {
-        NewSettings.DelsysMask |= ((1<<delsys) & SupportedDelsys);
-        if( delsys == 16 )
-        {
-          NewSettings.DelsysMask |= (1<<3);
-          document.getElementById(DelSysID[3]).checked = true;
-        }
-        if( delsys == 6 )
-        {
-          NewSettings.DelsysMask |= (1<<5);
-          document.getElementById(DelSysID[5]).checked = true;
+  function ShowDelsys() {
+    if (Octoserve) {
+      SupportedDelsys = 0;
+      for (var i = 0; i < Octoserve.TunerList.length; i++) {
+        if (Octoserve.TunerList[i]) {
+          SupportedDelsys = SupportedDelsys | Octoserve.TunerList[i].Type;
         }
       }
-      else
-      {
-        NewSettings.DelsysMask &= ~(1<<delsys);
-        if( delsys == 3 )
-        {
-          NewSettings.DelsysMask &= ~(1<<16);
-          document.getElementById(DelSysID[16]).checked = false;
+      for (var i = 0; i < DelSysID.length; i++) {
+        var Element = document.getElementById(DelSysID[i]);
+        if (Element) {
+          if (SupportedDelsys & (1 << i)) {
+            Element.disabled = false;
+            Element.checked = ((Octoserve.DelsysMask & (1 << i)) != 0) || 
+                              (Octoserve.DelsysMask == 0);
+            Element.parentElement.classList.remove("hide-delsys");
+          } else {
+            Element.disabled = true; Element.checked = false;
+            Element.parentElement.classList.add("hide-delsys");
+          }
+        } else {
+          SupportedDelsys &= ~(1 << i);
         }
-        if( delsys == 5 )
-        {
-          NewSettings.DelsysMask &= ~(1<<6);
-          document.getElementById(DelSysID[6]).checked = false;
-        }
+      }
+      for (var i = DelSysID.length; i < 32; i++) {
+        SupportedDelsys &= ~(1 << i);
       }
     }
-    document.getElementById("SetButton").disabled = false;
   }
-}
 
-function SetPassword()
-{
-  var pwd1 = document.getElementById("pwd1").value;
-  var pwd2 = document.getElementById("pwd2").value;
-  if( pwd1 != pwd2 )
-  {
-    document.getElementById("pwd1").value = "";
-    document.getElementById("pwd2").value = "";
-    document.getElementById("PwdError").style = "color:#F02000";
-    return 0;
+  function OnLoad() {
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+    ShowDelsys();
   }
-  document.getElementById("PwdError").style = "color:#FFFFFF";
-  location.replace('/setpasswd.lua?'+pwd1);
-}
 
-function ToggleHelp(id)
-{
-  var el = document.getElementById(id);
-  if( el.style.display == "none")
-    el.style.display = "block";
-  else
-    el.style.display = "none";
-}
+  function ChangeBoxName() {
+    if (NewSettings) {
+      var s = document.getElementById("BoxName").value;
+      s = s.replace(/[^a-zA-Z0-9@ ()-\/]/g, "");
+      document.getElementById("BoxName").value = s;
+      NewSettings.BoxName = document.getElementById("BoxName").value;
+      document.getElementById("SetButton").disabled = false;
+    }
+  }
 
-</script>
+  function Change() {
+    if (NewSettings) {
+      NewSettings.MSMode = document.getElementById("MSMode").value;
+      NewSettings.vlanEnabled = document.getElementById("QOSButton").checked;
+      NewSettings.telnetEnabled = document.getElementById("TelnetButton").checked;
+      NewSettings.nodmsEnabled = document.getElementById("NODMSButton").checked;
+      NewSettings.strictEnabled = document.getElementById("STRICTButton").checked;
+      document.getElementById("SetButton").disabled = false;
+    }
+  }
 
+  function ChangeDelSys(delsys) {
+    if (NewSettings) {
+      if (NewSettings.DelsysMask == 0) NewSettings.DelsysMask = SupportedDelsys;
+      var Element = document.getElementById(DelSysID[delsys]);
+      if (Element) {
+        if (Element.checked) {
+          NewSettings.DelsysMask |= ((1 << delsys) & SupportedDelsys);
+          if (delsys == 16) {
+            NewSettings.DelsysMask |= (1 << 3);
+            document.getElementById(DelSysID[3]).checked = true;
+          }
+          if (delsys == 6) {
+            NewSettings.DelsysMask |= (1 << 5);
+            document.getElementById(DelSysID[5]).checked = true;
+          }
+        } else {
+          NewSettings.DelsysMask &= ~(1 << delsys);
+          if (delsys == 3) {
+            NewSettings.DelsysMask &= ~(1 << 16);
+            document.getElementById(DelSysID[16]).checked = false;
+          }
+          if (delsys == 5) {
+            NewSettings.DelsysMask &= ~(1 << 6);
+            document.getElementById(DelSysID[6]).checked = false;
+          }
+        }
+      }
+      document.getElementById("SetButton").disabled = false;
+    }
+  }
+
+  function SetPassword() {
+    var pwd1 = document.getElementById("pwd1").value;
+    var pwd2 = document.getElementById("pwd2").value;
+    if (pwd1 != pwd2) {
+      document.getElementById("pwd1").value = "";
+      document.getElementById("pwd2").value = "";
+      document.getElementById("PwdError").style.display = "block";
+      return 0;
+    }
+    document.getElementById("PwdError").style.display = "none";
+    location.replace('/setpasswd.lua?' + pwd1);
+  }
+
+  function ToggleHelp(id) {
+    var el = document.getElementById(id);
+    if (el.style.display == "none" || el.style.display == "") {
+      el.style.display = "block";
+    } else {
+      el.style.display = "none";
+    }
+  }
+  </script>
 </head>
 <body onload="OnLoad()">
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div style="position: absolute; width:720px">
-        <!-- Begin Content -->
-        <div>
-          <table class="tableleft" align="center" cellspacing="2px">
-            <tr>
-              <td>Server name</td>
-              <td style="text-align:left" colspan="2">
-                <form action="">
-                   <input id="BoxName" type="text" value="" style="width: 300px" maxlength="20"
-                          pattern="[a-zA-Z0-9@ ()-]" disabled="true" oninput="ChangeBoxName()" />
-                </form>
-              </td>
-            <tr>
-              <td>Layer 2 Quality of Service</td>
-              <td style="text-align:right">
-                <form action="">
-                   <input id="QOSButton" type="checkbox" value="Check" disabled="true" checked="false" onclick="Change()" />
-                </form>
-              </td>
-              <td>See note:
-                <a href="javascript:ToggleHelp('qos_hlpE')">English</a>
-                <a href="javascript:ToggleHelp('qos_hlpD')">Deutsch</a>
-              </td>
-            </tr>
+  <div class="app-container">
+    
+    <header class="main-header">
+      <a href="http://digitaldevices.de" class="logo-link">
+        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+      </a>
+    </header>
 
-            <tr>
-              <td>Telnet</td>
-              <td style="text-align:right">
-                <form action="">
-                   <input id="TelnetButton" type="checkbox" value="Check" disabled="true" checked="false" onclick="Change()" />
-                </form>
-              </td>
-              <td>Enable it at your own risk</td>
-            </tr>
+    <div class="content-wrapper">
+      <nav class="side-navigation">
+        <script type="text/javascript">CreateMenu();</script>
+      </nav>
 
-            <tr>
-              <td>Disable DMS announcement</td>
-              <td style="text-align:right">
-                <form action="">
-                   <input id="NODMSButton" type="checkbox" value="Check" disabled="true" checked="false" onclick="Change()" />
-                </form>
-              </td>
-              <td></td>
-            </tr>
+      <main class="main-content">
+        <div class="headline-group">
+          <h1>System Einstellungen</h1>
+          <h2>Gerätenamen, Netzwerkeigenschaften und Tuner-Systeme verwalten</h2>
+        </div>
 
-            <tr>
-              <td>Enforce strict SAT&gt;IP</td>
-              <td style="text-align:right">
-                <form action="">
-                  <input id="STRICTButton" type="checkbox" value="Check" disabled="true" checked="false" onclick="Change()" />
-                </form>
-              </td>
-              <td>See note:
-                <a href="javascript:ToggleHelp('strict_hlpE')">English</a>
-                <a href="javascript:ToggleHelp('strict_hlpD')">Deutsch</a>
-              </td>
-            </tr>
+        <!-- Hilfe Overlays (Modernisiert als Info-Boxen über den Cards) -->
+        <div id="qos_hlpE" class="help-box-card" style="display:none;" onclick="ToggleHelp('qos_hlpE')">
+          <h3>Layer 2 Quality of Service (QoS)</h3>
+          <p>Defined in <b>IEEE 802.1Q</b> VLAN standard. All components in your LAN must be transparent or support it (Hubs: yes, Switches/PCs: check settings).</p>
+        </div>
+        <div id="qos_hlpD" class="help-box-card" style="display:none;" onclick="ToggleHelp('qos_hlpD')">
+          <h3>Layer 2 Quality of Service (QoS)</h3>
+          <p>Definiert im <b>IEEE 802.1Q</b> VLAN Standard. Alle Netzwerkkomponenten (Switches/Router) müssen transparent sein oder es unterstützen.</p>
+        </div>
+        <div id="nosw_hlpE" class="help-box-card" style="display:none;" onclick="ToggleHelp('nosw_hlpE')">
+          <h3>Multiswitch emulation</h3>
+          <p>Allows connecting Quad/Quattro LNB directly to the 4 inputs on S8. Quad: for Quad LNB. Quattro: for Quattro LNB Trunk outputs.</p>
+        </div>
+        <div id="nosw_hlpD" class="help-box-card" style="display:none;" onclick="ToggleHelp('nosw_hlpD')">
+          <h3>Multischalter-Emulation OctopusNet S8</h3>
+          <p>Erlaubt den direkten Anschluss eines Quad/Quattro LNBs an die S8. Nur der Empfang eines einzelnen Satelliten wird unterstützt.</p>
+        </div>
+        <div id="strict_hlpE" class="help-box-card" style="display:none;" onclick="ToggleHelp('strict_hlpE')">
+          <h3>Enforce strict SAT&gt;IP</h3>
+          <p>Disables the enhancement that allows multiple clients to modify or share streams independently. Use for testing client compatibility.</p>
+        </div>
+        <div id="strict_hlpD" class="help-box-card" style="display:none;" onclick="ToggleHelp('strict_hlpD')">
+          <h3>Erzwinge striktes SAT&gt;IP</h3>
+          <p>Schaltet erweiterte Stream-Teilungsparameter ab, um die exakte Kompatibilität mit Standard-SAT&gt;IP-Spezifikationen zu erzwingen.</p>
+        </div>
 
-            <tr id="trMSMode" style="display:none">
-              <td>Multiswitch emulation</td>
-              <td style="text-align:right">
-                <form action="">
-                <select id="MSMode" style="width: 70px" onchange="Change()" >
+        <div class="dashboard-grid">
+          
+          <!-- Spalte 1: Grundeinstellungen -->
+          <section class="card">
+            <h3>Geräte-Konfiguration</h3>
+            
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="BoxName">Server Name:</label>
+                <input id="BoxName" type="text" class="form-control" maxlength="20" disabled="true" oninput="ChangeBoxName()" />
+              </div>
+
+              <hr class="card-divider"/>
+
+              <div class="form-group row-align">
+                <div class="label-help-wrapper">
+                  <label class="font-bold">Layer 2 QoS</label>
+                  <span class="help-links">
+                    (<a href="javascript:ToggleHelp('qos_hlpE')">EN</a> / 
+                    <a href="javascript:ToggleHelp('qos_hlpD')">DE</a>)
+                  </span>
+                </div>
+                <input id="QOSButton" type="checkbox" class="form-checkbox" disabled="true" onclick="Change()" />
+              </div>
+
+              <div class="form-group row-align">
+                <div class="label-help-wrapper">
+                  <label class="font-bold">Telnet Zugriff</label>
+                  <span class="text-muted text-sm">(Eigenes Risiko)</span>
+                </div>
+                <input id="TelnetButton" type="checkbox" class="form-checkbox" disabled="true" onclick="Change()" />
+              </div>
+
+              <div class="form-group row-align">
+                <label class="font-bold">DMS Ankündigung deaktivieren</label>
+                <input id="NODMSButton" type="checkbox" class="form-checkbox" disabled="true" onclick="Change()" />
+              </div>
+
+              <div class="form-group row-align">
+                <div class="label-help-wrapper">
+                  <label class="font-bold">Striktes SAT&gt;IP erzwingen</label>
+                  <span class="help-links">
+                    (<a href="javascript:ToggleHelp('strict_hlpE')">EN</a> / 
+                    <a href="javascript:ToggleHelp('strict_hlpD')">DE</a>)
+                  </span>
+                </div>
+                <input id="STRICTButton" type="checkbox" class="form-checkbox" disabled="true" onclick="Change()" />
+              </div>
+
+              <div id="trMSMode" class="form-group row-align" style="display:none;">
+                <div class="label-help-wrapper">
+                  <label class="font-bold">Multiswitch Emulation</label>
+                  <span class="help-links">
+                    (<a href="javascript:ToggleHelp('nosw_hlpE')">EN</a> / 
+                    <a href="javascript:ToggleHelp('nosw_hlpD')">DE</a>)
+                  </span>
+                </div>
+                <select id="MSMode" class="form-control width-auto" onchange="Change()">
                   <option value="none">Off</option>
                   <option value="quad">Quad</option>
                   <option value="quattro">Quattro</option>
                 </select>
-                </form>
-              </td>
-              <td>See note:
-                <a href="javascript:ToggleHelp('nosw_hlpE')">English</a>
-                <a href="javascript:ToggleHelp('nosw_hlpD')">Deutsch</a>
-              </td>
-            </tr>
+              </div>
+            </div>
 
-            <tr>
-              <td colspan="3" >
-                <form action="">
-                  <table id="delsystable" cellpadding="2px" align="center" width="100%">
-                    <colgroup>
-                      <col width="25%">
-                      <col width="25%">
-                      <col width="25%">
-                      <col width="25%">
-                    </colgroup>
-                    <tr>
-                      <td>
-                        <input id="SYS_DVBS" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(5)"/>
-                        DVB-S
-                      </td>
-                      <td>
-                        <input id="SYS_DVBS2" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(6)"/>
-                        DVB-S2/S2X
-                      </td>
-                      <td>
-                        <input id="SYS_ISDBS" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(9)"/>
-                        ISDB-S
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <input id="SYS_DVBT" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(3)"/>
-                        DVB-T
-                      </td>
-                      <td>
-                        <input id="SYS_DVBT2" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(16)"/>
-                        DVB-T2
-                      </td>
-                      <td>
-                        <input id="SYS_ISDBT" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(8)"/>
-                        ISDB-T
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>
-                        <input id="SYS_DVBC_ANNEX_A" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(1)"/>
-                        DVB-C
-                      </td>
-                      <td>
-                        <input id="SYS_DVBC2" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(19)"/>
-                        DVB-C2
-                      </td>
-                      <td>
-                        <input id="SYS_ISDBC" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(10)"/>
-                        ISDB-C
-                      </td>
-                      <td>
-                        <input id="SYS_DVBC_ANNEX_B" type="checkbox" disabled="true" checked="false" onclick="ChangeDelSys(4)"/>
-                        J83.B
-                      </td>
-                    </tr>
-                  </table>
-                </form>
-              </td>
-            </tr>
+            <div class="button-container margin-top-heavy">
+              <input type="button" class="btn btn-secondary" value="Cancel" onclick="location.replace('index.html')">
+              <input type="button" class="btn btn-secondary" value="Reset" onclick="ClearSettings()">
+              <input id="SetButton" type="button" class="btn btn-primary" disabled="true" value="Set" onclick="SaveSettings()">
+            </div>
+          </section>
 
-            <tr>
-              <td colspan="2" align="right">
-                <div style="width: 300px">
-                  <form action="">
-                    <input type="Button" value="Cancel" onclick="location.replace('index.html')" >
-                    <input type="Button" value="Reset" onclick="ClearSettings()" >
-                    <input id="SetButton" type="Button" disabled="true" value="Set" onclick="SaveSettings()" >
-                  </form>
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <br/>
-        <div id="passwd" style="display: none">
-         <form action="">
-          <table class="tableleft" align="center" cellspacing="2px">
-            <tr>
-              <td align="right">
-                New password
-              </td>
-              <td>
-                <input id="pwd1" type="Password" value="" size="30">
-              </td>
-            </tr>
-            <tr>
-              <td align="right">
-                Repeat new password
-              </td>
-              <td>
-                <input id="pwd2" type="Password" value="" size="30">
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <div Id="PwdError" Style="color:#FFFFFF">
-                  Repeated password doesn't match
-                </div>
-              </td>
-              <td align="right">
-                <input id="SetButton" type="Button" value="Set Password" onclick="SetPassword()" >
-              </td>
-            </tr>
-          </table>
-         </form>
-        </div>
-        <div id="qos_hlpE"  onclick="ToggleHelp('qos_hlpE')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Layer 2 Quality of Service</h3>
-            This is defined in the <b>IEEE 802.1Q</b> VLAN standard, and provides QoS in a local network.<br/>
-            For it to work all components in the LAN must either be transparent to it or need to support it.
-            <ul>
-             <li><b>hubs:</b> always transparent.</li>
-             <li><b>dumb switches:</b> usually transparent, better ones use it to prioritise the traffic.</li>
-             <li><b>smart switches:</b> depends on setting.</li>
-             <li><b>PCs and the like:</b> newer systems support it by default, for older systems check the LAN adapter settings.</li>
-             <li><b>WLAN access points:</b> depends on firmware and model. OpenWRT based devices usually work.</li>
-            </ul>
-          </div>
-        </div>
-        <div id="qos_hlpD" onclick="ToggleHelp('qos_hlpD')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Layer 2 Quality of Service</h3>
-            Dies ist im <b>IEEE 802.1Q</b> VLAN Standard definiert und erlaubt QoS im lokalem Netz.<br/>
-            Damit es funktioniert m&uuml;ssen alle Netzwerkkompenenten im LAN entweder transparent sein oder es unterst&uuml;tzen.
-            <ul>
-             <li><b>Hubs:</b> sind immer transparent</li>
-             <li><b>Dumb Switches:</b> normalerweise transparent, bessere priorisieren damit den Datenverkehr</li>
-             <li><b>Smart Switches:</b> h&auml;ngt von den Einstellungen ab</li>
-             <li><b>PCs und dergleichen:</b> neue Systeme unterst&uuml;tzten es defaultmässig, für &auml;ltere in den Einstellungen der Netzwerkarte nachschauen</li>
-             <li><b>WLAN Accesspoints:</b> h&auml;ngt von Modell und deren Firmware ab. OpenWRT basierte Ger&auml;te unterst&uuml;tzen es normalerweise</li>
-            </ul>
-          </div>
-        </div>
-        <div id="nosw_hlpE"  onclick="ToggleHelp('nosw_hlpE')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Multiswitch emulation on OctopusNet S8</h3>
-            Multiswitch emulation allows to connect directly a Quad/Quattro LNB to the 4 inputs on the S8.
-            <p>
-            <ul>
-             <li>Disabling configures the S8 as a standard 4 tuner system.</li>
-             <li>Use quad setting for connection to a quad LNB or to 4 outputs from a multiswitch.</li>
-             <li>Use quattro setting for connection to a quattro LNB or to the trunk outputs from a multiswitch. Ensure to connect the VL/VH/HL/HH cables correctly.</li>
-            </ul>
-            <p/>
-            With the quad/quattro settings only the reception of a single satellite is supported. For full flexibility an EN50607 LNB or switch is recommended.
-          </div>
-        </div>
-        <div id="nosw_hlpD"  onclick="ToggleHelp('nosw_hlpD')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Multischalter-Emulation OctopusNet S8</h3>
-            Multischalter-Emulation erlaubt den direkten Anschlu&szlig; eines Quad/Quattro LNB an die S8
-            <p>
-            <ul>
-             <li>Abschalten konfiguriert die S8 als ein Standardsystem mit 4 Tunern.</li>
-             <li>Für einen Quad LNB oder für 4 Ausg&auml;nge von einem Multiswitch Quad Einstellung ausw&auml;hlen.</li>
-             <li>Für einen Quattro LNB oder f&uuml;r den Stammausgang eines Multiswitches Quattro Einstellung ausw&auml;hlen.</li>
-            </ul>
-            <p/>
-            In der Quad oder Quattro Einstellung wird nur der Empfang eines Satelliten unterst&uuml;tzt. Für volle Flexibilit&auml;t wird der Einsatz eines EN50607 LNB bzw Switch empfohlen.
-          </div>
-        </div>
-        <div id="strict_hlpE"  onclick="ToggleHelp('strict_hlpE')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Enforce strict SAT&gt;IP</h3>
-            <p/>
-            The SAT&gt;IP specification allows a second client to receive a stream created by another client.
-            The OctopusNet allows to modify some parameters (like PIDs) on this second stream. The original stream is not affected by this.
-            <p/>
-            Enforce strict SAT&gt;IP disables this enhancment.
-            <br/>
-            Do this for testing clients to ensure they are compatible with other SAT&gt;IP servers
-          </div>
-        </div>
-        <div id="strict_hlpD"  onclick="ToggleHelp('strict_hlpD')"
-             style="display: none; position: absolute; width: 660px; left: 30px; top:30px; z-index: 2; border: 1px solid #000000; background: #FFFFE0;">
-          <div style="position: relative; margin:20px; clear:both">
-            <h3>Erzwinge striktes SAT&gt;IP</h3>
-            <p/>
-            Die SAT&gt;IP Spezifikation erlaubt einem zweiten Client das Empfangen eines von einem anderen Client angelegten Stream. Die OctopusNet erlaubt
-            die &Auml;nderung einiger Parameter (z.B. PIDs) für diesen Stream. Der orginale Stream wird dadurch nicht beeinflusst.
-            <p/>
-            Das Erzwingen von strikten SAT&gt;IP schaltet diese Erweiterung ab.
-            <br/>
-            Beim Testen von Clients ist es sinnvoll diesen Parameter zu setzen um die Kompatibilit&auml;t mit anderen SAT&gt;IP Servern sicherzustellen.
-          </div>
-        </div>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+          <!-- Spalte 2: Modulationssysteme & Passwort -->
+          <section class="card">
+            <h3>Unterstützte Modulationssysteme</h3>
+            <p class="update-subtext margin-bottom">Aktivieren oder Deaktivieren Sie die Empfangstypen für die Hardware-Tuner.</p>
+            
+            <div class="system-delsys-grid">
+              <div class="delsys-item"><input id="SYS_DVBS" type="checkbox" disabled="true" onclick="ChangeDelSys(5)"/> <span>DVB-S</span></div>
+              <div class="delsys-item"><input id="SYS_DVBS2" type="checkbox" disabled="true" onclick="ChangeDelSys(6)"/> <span>DVB-S2/S2X</span></div>
+              <div class="delsys-item"><input id="SYS_ISDBS" type="checkbox" disabled="true" onclick="ChangeDelSys(9)"/> <span>ISDB-S</span></div>
+              <div class="delsys-item"><input id="SYS_DVBT" type="checkbox" disabled="true" onclick="ChangeDelSys(3)"/> <span>DVB-T</span></div>
+              <div class="delsys-item"><input id="SYS_DVBT2" type="checkbox" disabled="true" onclick="ChangeDelSys(16)"/> <span>DVB-T2</span></div>
+              <div class="delsys-item"><input id="SYS_ISDBT" type="checkbox" disabled="true" onclick="ChangeDelSys(8)"/> <span>ISDB-T</span></div>
+              <div class="delsys-item"><input id="SYS_DVBC_ANNEX_A" type="checkbox" disabled="true" onclick="ChangeDelSys(1)"/> <span>DVB-C</span></div>
+              <div class="delsys-item"><input id="SYS_DVBC2" type="checkbox" disabled="true" onclick="ChangeDelSys(19)"/> <span>DVB-C2</span></div>
+              <div class="delsys-item"><input id="SYS_ISDBC" type="checkbox" disabled="true" onclick="ChangeDelSys(10)"/> <span>ISDB-C</span></div>
+              <div class="delsys-item"><input id="SYS_DVBC_ANNEX_B" type="checkbox" disabled="true" onclick="ChangeDelSys(4)"/> <span>J83.B</span></div>
+            </div>
 
+            <hr class="card-divider"/>
+
+            <h3>Sicherheit / Admin Passwort</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Neues Passwort:</label>
+                <input id="pwd1" type="password" class="form-control" placeholder="Passwort eingeben">
+              </div>
+              <div class="form-group">
+                <label>Passwort wiederholen:</label>
+                <input id="pwd2" type="password" class="form-control" placeholder="Passwort wiederholen">
+              </div>
+              <div id="PwdError" class="alert alert-danger" style="display: none; margin-top: 10px;">
+                Die Passwörter stimmen nicht überein!
+              </div>
+            </div>
+            <div class="button-container margin-top">
+              <input type="button" class="btn btn-primary" value="Set Password" onclick="SetPassword()">
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+
