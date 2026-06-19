@@ -51,8 +51,9 @@ a img {
 }
 
 .logo-img {
-  max-width: 100%;
-  height: auto;
+  max-width: auto;
+  height: 80px;
+  margin-left: auto;
   display: block;
 }
 

@@ -1,0 +1,50 @@
+# cat /etc/init.d/S41ntpd 
+#!/bin/sh
+
+# Feste, verlässliche NTP-Server (Standard: Deutsche NTP-Pools)
+NTP_SERVERS="0.de.pool.ntp.org 1.de.pool.ntp.org pool.ntp.org"
+
+case "$1" in
+    start)
+        echo "Initializing System Time via NTP..."
+        
+        # STUFE 1: Einmaliges, sofortiges Setzen der Uhrzeit beim Booten
+        # Versucht die Server nacheinander mit einem Timeout von 4 Sekunden
+        for server in $NTP_SERVERS; do
+            echo "Trying to step time with server: $server"
+            if ntpd -n -q -p "$server" >/dev/null 2>&1; then
+                echo "System time successfully set: $(date)"
+                break
+            fi
+        done
+
+        # STUFE 2: Starten des Daemons für die dauerhafte Hintergrund-Synchronisation
+        echo "Starting background NTP daemon..."
+        
+        # Argumente für den BusyBox-ntpd Daemon zusammenbauen
+        ARGS="-N" # Setzt hohe Prozess-Priorität für präzise Zeit
+        for server in $NTP_SERVERS; do
+            ARGS="$ARGS -p $server"
+        done
+        
+        # Startet den Daemon im Hintergrund
+        ntpd $ARGS
+        ;;
+        
+    stop)
+        echo "Stopping NTP daemon..."
+        killall ntpd
+        ;;
+        
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+        
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+        ;;
+esac
+

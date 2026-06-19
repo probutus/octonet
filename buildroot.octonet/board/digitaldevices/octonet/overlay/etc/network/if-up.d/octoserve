@@ -1,0 +1,5 @@
+#!/bin/sh
+if [ "$IFACE" = "eth0" ]; then
+    /etc/init.d/S99octo restartoctoserve 2>/dev/null
+fi
+

@@ -12,6 +12,12 @@ RESOLV_CONF="/etc/resolv.conf"
 /usr/bin/logger "udhcpc_action $interface $1 ip=$ip"
 
 do_config() {
+    if grep -q "root=/dev/nfs" /proc/cmdline || grep -q "nfsroot=" /proc/cmdline; then
+        # Wenn wir via NFS laufen, darf udhcpc NIEMALS das Interface anfassen!
+        echo "NFS-Root active: Disabling udhcpc interface reconfiguration to prevent Kernel Panic."
+        exit 0
+    fi
+
     killall zcip > /dev/null
     /sbin/ifconfig $interface $ip  $NETMASK
     

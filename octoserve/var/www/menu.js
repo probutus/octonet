@@ -7,9 +7,10 @@ var MenuItems = [
   { Text: "Unicable Settings", Link: "scif.html" },
   { Text: "LNB Settings", Link: "lnbsettings.html" },
   { Text: "System Settings", Link: "system.html" },
+  { Text: "Network Settings", Link: "network.html" },
   { Text: "Multicast Setup", Link: "multicast.html" },
   { Text: "Channel Lists", Link: "channellists.html" },
-  { Text: "Update", Link: "update.html" },
+  { Text: "Update", Link: "updateserver.html" },
   { Text: "Reboot", Link: "reboot.html" },
   { Text: "Hardware Monitor", Link: "monitor.html" },
   { Text: "Licenses", Link: "licenses.html" }

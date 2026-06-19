@@ -74,18 +74,141 @@
         if (statusBox) statusBox.style.display = "flex";
         document.getElementById("updatestatus").firstChild.nodeValue = 
           "Suche nach Updates...";
-        Request("/update.lua?check");
+          
+        // KORREKTUR: Wieder auf das originale Update-Skript des Systems verweisen!
+        Request("/update.lua?check"); 
       }
     }
   }
+
+  // --- Server-Auswahl-Steuerung ---
+  function ToggleServerFields(isCustom) {
+      var container = document.getElementById("custom-server-fields");
+      if (container) {
+          container.style.display = isCustom ? "block" : "none";
+      }
+      var srvIp = document.getElementById("ServerIP");
+      if (srvIp) {
+          srvIp.required = isCustom;
+      }
+  }
+
+  // Strikte Validierung der privaten Subnetze
+  function isValidLocalIPv4(ip) {
+      var blocks = ip.split('.');
+      if (blocks.length !== 4) return false;
+      
+      var o1 = Number(blocks[0]);
+      var o2 = Number(blocks[1]);
+      var o3 = Number(blocks[2]);
+      var o4 = Number(blocks[3]);
+
+      if (isNaN(o1) || isNaN(o2) || isNaN(o3) || isNaN(o4)) return false;
+      if (o1 < 0 || o1 > 255 || o2 < 0 || o2 > 255 || o3 < 0 || o3 > 255 || o4 < 0 || o4 > 255) return false;
+      
+      for (var i = 0; i < blocks.length; i++) {
+          if (blocks[i].length > 1 && blocks[i].startsWith('0')) return false;
+      }
+
+      var is10 = (o1 === 10);
+      var is172 = (o1 === 172 && o2 >= 16 && o2 <= 31);
+      var is192 = (o1 === 192 && o2 === 168);
+
+      return (is10 || is172 || is192);
+  }
+
+  function LoadServerConfig() {
+      var xhr = new XMLHttpRequest();
+      xhr.onreadystatechange = function() {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+              var config = JSON.parse(xhr.responseText);
+              if (config.type === "custom") {
+                  document.getElementById("srv-custom").checked = true;
+                  document.getElementById("ServerIP").value = config.ip || "";
+                  ToggleServerFields(true);
+              } else {
+                  document.getElementById("srv-official").checked = true;
+                  ToggleServerFields(false);
+              }
+          }
+      };
+      xhr.open("GET", "/updateserver.lua?getserver=1", true);
+      xhr.send();
+  }
+
+  function SaveServerConfig(event) {
+      event.preventDefault();
+      var type = document.querySelector('input[name="srv_type"]:checked').value;
+      var ipVal = document.getElementById("ServerIP").value.trim();
+      var saveStatus = document.getElementById("save-status");
+
+      saveStatus.style.display = "block";
+      saveStatus.style.color = "var(--text-main)";
+      saveStatus.textContent = "Speichere Server-Konfiguration...";
+
+      if (type === "custom" && !isValidLocalIPv4(ipVal)) {
+          saveStatus.textContent = "❌ Fehler: Adresse muss eine gültige lokale IP-Adresse sein (10.x, 172.16-31.x, 192.168.x)!";
+          saveStatus.style.color = "#dc3545";
+          document.getElementById("ServerIP").focus();
+          return;
+      }
+
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/updateserver.lua", true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      
+      xhr.onreadystatechange = function() {
+          if (xhr.readyState == 4) {
+              if (xhr.status == 200) {
+                  saveStatus.textContent = "✅ Server-Konfiguration erfolgreich angepasst!";
+                  saveStatus.style.color = "#28a745";
+
+                  // KORREKTUR: JavaScript-Kommentarstil korrigiert (// statt --)
+                  // Reset-Logik für die Update-Anzeige bei Quellenwechsel
+                  UpdateAvailable = false;
+                  isChecking = false;
+                  
+                  // 1. Setzt den Button zurück auf den "Prüfen"-Standard
+                  var updateBtn = document.getElementById("UpdateButton");
+                  if (updateBtn) {
+                      updateBtn.value = "Prüfen";
+                      updateBtn.className = "btn btn-secondary";
+                      updateBtn.disabled = false;
+                  }
+                  
+                  // 2. Setzt den originalen Hinweistext der Karte zurück
+                  var updateMsg = document.getElementById("updatemsg");
+                  if (updateMsg) {
+                      updateMsg.firstChild.nodeValue = "Firmware / System-Paket überprüfen";
+                  }
+                  
+                  // 3. Verbirgt die alte Status-Anzeige des vorherigen Servers wieder
+                  var statusBox = document.getElementById("scan-status-box");
+                  if (statusBox) {
+                      statusBox.style.display = "none";
+                  }
+                  
+                  var updateStatusText = document.getElementById("updatestatus");
+                  if (updateStatusText) {
+                      updateStatusText.firstChild.nodeValue = "Initialisiere Suche...";
+                  }
+
+              } else {
+                  saveStatus.textContent = "❌ Fehler beim Speichern (Status: " + xhr.status + ")";
+                  saveStatus.style.color = "#dc3545";
+              }
+          }
+      };
+      xhr.send("action=saveserver&type=" + type + "&ip=" + encodeURIComponent(ipVal));
+  }
   </script>
 </head>
-<body>
+<body onload="InitDragAndDrop()">
   <div class="app-container">
     
     <header class="main-header">
       <a href="http://digitaldevices.de" class="logo-link">
-        <img src="/BannerDD.jpg" alt="Digital Devices Logo" class="logo-img" />
+        <img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
       </a>
     </header>
 
@@ -103,6 +226,40 @@
         <div class="dashboard-grid">
           <section class="card full-width text-center-content">
             
+            <!-- Server-Auswahlkomponente -->
+            <h3 class="margin-bottom">Updateserver-Quelle konfigurieren</h3>
+            
+            <form onsubmit="SaveServerConfig(event)" style="max-width: 500px; margin: 0 auto 25px auto;">
+              <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-color); padding: 15px; border-radius: var(--border-radius); text-align: left; margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+                  <input type="radio" id="srv-official" name="srv_type" value="official" checked onclick="ToggleServerFields(false)" style="transform: scale(1.1);">
+                  Offizieller Digital Devices Server
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+                  <input type="radio" id="srv-custom" name="srv_type" value="custom" onclick="ToggleServerFields(true)" style="transform: scale(1.1);">
+                  Eigener Updateserver (Lokal)
+                </label>
+              </div>
+
+              <div id="custom-server-fields" style="display: none; margin-bottom: 15px;">
+                <table class="data-table">
+                  <tr>
+                    <td><label for="ServerIP"><strong>Server IP-Adresse:</strong></label></td>
+                    <td>
+                      <input type="text" id="ServerIP" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 192.168.1.100" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <p id="save-status" class="font-bold" style="display: none; margin-bottom: 15px; font-size: 0.9rem;"></p>
+              <div class="button-container" style="justify-content: center;">
+                <input type="submit" class="btn btn-primary" value="Quelle speichern">
+              </div>
+            </form>
+
+            <hr class="card-divider" style="margin: 30px 0; border: none; border-bottom: 2px solid var(--accent-color);"/>
+
+            <!-- Originale Online-Prüfung -->
             <div class="update-warning-icon">🔄</div>
             
             <h3 id="updatemsg" class="margin-bottom">Firmware / System-Paket überprüfen</h3>

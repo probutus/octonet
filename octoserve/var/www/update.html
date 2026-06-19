@@ -1,132 +1,239 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-<script type="text/javascript" src="/systeminfo.lua"></script>
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-isChecking = false;
-UpdateAvailable = false;
-
-function FWVersion(fwdate)
-{
-  if( fwdate.length > 0 )
-  {
-    // Jahr, Monat, Tag, Stunden, Minuten
-    // date = new Date("20"+fwdate.substr(0,2),fwdate.substr(2,2)-1,fwdate.substr(4,2),fwdate.substr(6,2),fwdate.substr(8,2),"0");
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OctopusNet - Update</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script type="text/javascript" src="/menu.js"></script>
+    <!-- Included scripts -->
+    <script type="text/javascript" src="/systeminfo.lua"></script>
     
-    var date = new Date(1);
-    date.setUTCDate(fwdate.substr(4,2));
-    date.setUTCFullYear("20"+fwdate.substr(0,2));
-    date.setUTCMonth(fwdate.substr(2,2)-1);
-    date.setUTCHours(fwdate.substr(6,2));
-    date.setUTCMinutes(fwdate.substr(8,2));
-    
-    var ds = date.toGMTString();
+    <!-- Page scripts -->
+    <script type="text/javascript">
+        isChecking = false;
+        UpdateAvailable = false;
 
-    return (ds.substring(5,ds.length-7));
-  }
-  return ("?");
-}
+        function FWVersion(fwdate) {
+            if (fwdate.length > 0) {
+                var date = new Date(1);
+                date.setUTCDate(fwdate.substr(4,2));
+                date.setUTFullYear("20" + fwdate.substr(0,2));
+                date.setUTCMonth(fwdate.substr(2,2) - 1);
+                date.setUTCHours(fwdate.substr(6,2));
+                date.setUTCMinutes(fwdate.substr(8,2));
+                var ds = date.toGMTString();
+                return (ds.substring(5, ds.length - 7));
+            }
+            return ("?");
+        }
 
-var xmlhttp = new XMLHttpRequest();
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4) {
+                if (xmlhttp.status == 200) {
+                    myFunction(xmlhttp.responseText);
+                }
+                isChecking = false;
+            }
+        }
 
-xmlhttp.onreadystatechange=function() {
-    if (xmlhttp.readyState == 4 )
-    {
-      if ( xmlhttp.status == 200)
-      {
-        myFunction(xmlhttp.responseText);
-      }
-      isChecking = false;
-    }
-}
+        function Request(url) {
+            xmlhttp.open("GET", url, true);
+            xmlhttp.send();
+        }
 
-function Request(url) 
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
+        function myFunction(response) {
+            var UpdateStatus = JSON.parse(response);
+            if (UpdateStatus.Info != "") {
+                document.getElementById("UpdateButton").value = "Update";
+                document.getElementById("updatemsg").firstChild.nodeValue = "New firmware/system package available";
+                document.getElementById("updatestatus").firstChild.nodeValue = "Version: " + FWVersion(UpdateStatus.Info);
+                UpdateAvailable = true;
+            } else {
+                document.getElementById("updatestatus").firstChild.nodeValue = "No update available";
+            }
+            document.getElementById("UpdateButton").disabled = false;
+        }
 
-function myFunction(response) {
-    var UpdateStatus = JSON.parse(response);
-    if( UpdateStatus.Info != "" )
-    {
-      document.getElementById("UpdateButton").value  = "Update";    
-      document.getElementById("updatemsg").firstChild.nodeValue  = "New firmware/system package available";    
-      document.getElementById("updatestatus").firstChild.nodeValue  = "Version: " + FWVersion(UpdateStatus.Info);    
-      UpdateAvailable = true;
-    }
-    else
-      document.getElementById("updatestatus").firstChild.nodeValue  = "No update available";    
-    document.getElementById("UpdateButton").disabled  = false;    
-}
-
-function CheckUpdate()
-{
-  if( !isChecking )
-  {
-    document.getElementById("UpdateButton").disabled  = true;    
-    isChecking = true;
-    if( UpdateAvailable )
-    {
-      location.replace('/doupdate.html');
-    }
-    else
-    {
-      Request("/update.lua?check");
-    }
-  }
-}
-</script>
-
+        function CheckUpdate() {
+            if (!isChecking) {
+                document.getElementById("UpdateButton").disabled = true;
+                isChecking = true;
+                if (UpdateAvailable) {
+                    location.replace('/doupdate.html');
+                } else {
+                    Request("/update.lua?check");
+                }
+            }
+        }
+    </script>
 </head>
-<body>
+<body onload="OnLoad()">
 
-
-<table class="maintable" align="center">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->                
-        <table class="table" align="center">
-          <tr>
-            <td id="updatemsg">Check for firmware/system update:</td>
-            <td>
-              <form action="">
-                 <input id="UpdateButton" type="Button" value="Check" onclick="CheckUpdate()" />
-              </form>
-            </td>
-          <tr>
+    <!-- Übergeordnetes Grid-Layout analog zu index.html -->
+    <div class="app-container">
         
-          <tr>
-            <td id="updatestatus">&nbsp;</td>
-            <td>&nbsp;</td>
-          </tr>
-        </table>
+        <!-- Header mit korrekt skaliertem Logo -->
+        <header class="main-header">
+            <a href="http://digitaldevices.de" class="logo-link">
+                <img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
+            </a>
+        </header>
 
-        
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+        <div class="content-wrapper">
+            <!-- Seitennavigation -->
+            <nav class="side-navigation">
+                <script type="text/javascript">CreateMenu();</script>
+            </nav>
 
+            <!-- Hauptinhalt im neuen Stil -->
+            <main class="main-content">
+                <div class="headline-group">
+                    <h1>Firmware & System Update</h1>
+                    <h2>Aktualisieren Sie die Systemkomponenten Ihrer OctopusNet</h2>
+                </div>
+
+                <!-- Update-Komponenten im Dashboard-Grid -->
+                <div class="dashboard-grid">
+                    <section class="card full-width">
+                        <h3>Direktes Firmware-Image-Update</h3>
+                        <p class="update-subtext" style="margin-bottom: 20px;">
+                            Ziehen Sie die unkomprimierte Image-Datei im Format <strong>octonet_YYYYMMDD_hash.img</strong> in das Feld. 
+                            Der SHA256-Hash im Namen wird automatisch zur Verifizierung auf dem Gerät ausgelesen.
+                        </p>
+                        
+                        <!-- Drag & Drop Zone für .img -->
+                        <div id="drop-zone" class="help-box-card" style="border: 2px dashed var(--primary-color); background: var(--bg-color); color: var(--text-main); text-align: center; padding: 40px 20px; margin-bottom: 20px; border-radius: var(--border-radius); transition: all 0.3s ease; cursor: pointer;">
+                            <div class="update-warning-icon" style="font-size: 2.5rem; color: var(--primary-color);">💾</div>
+                            <p id="drop-zone-text" class="font-bold">Firmware-IMG hierher ziehen oder klicken</p>
+                            <input type="file" id="firmware-file" accept=".img" style="display: none;" />
+                        </div>
+
+                        <!-- Fortschritts- und Validierungsanzeige -->
+                        <div id="upload-progress-container" style="display: none; margin-bottom: 20px;">
+                            <p class="font-bold" id="upload-title">Upload-Status:</p>
+                            <div style="background: var(--accent-color); border-radius: 4px; height: 10px; width: 100%; overflow: hidden;">
+                                <div id="upload-progress-bar" style="background: var(--primary-color); height: 100%; width: 0%; transition: width 0.1s linear;"></div>
+                            </div>
+                            <p id="upload-status-text" class="text-sm" style="margin-top: 5px; color: var(--text-muted);">Bereit...</p>
+                        </div>
+
+                        <!-- Trenner zur automatischen Online-Aktualisierung -->
+                        <hr class="card-divider" style="margin: 25px 0 20px 0; border: none; border-bottom: 2px solid var(--accent-color);"/>
+                        
+                        <h3>Automatische Online-Aktualisierung</h3>
+                        <table class="data-table">
+                            <tr>
+                                <td id="updatemsg">Check for firmware/system update:</td>
+                                <td>
+                                    <div class="button-container">
+                                        <form action="" onsubmit="event.preventDefault();">
+                                            <input id="UpdateButton" type="button" class="btn btn-primary" value="Check" onclick="CheckUpdate()" />
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Status / Version:</td>
+                                <td id="updatestatus" class="font-bold">&nbsp;</td>
+                            </tr>
+                        </table>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+    <!-- JavaScript-Logik für Drag & Drop & Namens-Extraktion -->
+    <script type="text/javascript">
+        var dropZone = document.getElementById('drop-zone');
+        var fileInput = document.getElementById('firmware-file');
+        var progressContainer = document.getElementById('upload-progress-container');
+        var progressBar = document.getElementById('upload-progress-bar');
+        var statusText = document.getElementById('upload-status-text');
+
+        dropZone.addEventListener('click', function() { fileInput.click(); });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) { processFile(fileInput.files); }
+        });
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
+            dropZone.addEventListener(eventName, function(e) { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(function(eventName) {
+            dropZone.addEventListener(eventName, function() { dropZone.style.background = 'var(--accent-color)'; }, false);
+        });
+        ['dragleave', 'drop'].forEach(function(eventName) {
+            dropZone.addEventListener(eventName, function() { dropZone.style.background = 'var(--bg-color)'; }, false);
+        });
+
+        dropZone.addEventListener('drop', function(e) {
+            var dt = e.dataTransfer;
+            var files = dt.files;
+            if (files.length > 0) { processFile(files); }
+        });
+
+        function processFile(file) {
+            // Regex prüft das Format: octonet_8StelligeZahl_64StelligerHexHash.img
+            var namePattern = /^octonet_(\d{8})_([a-fA-F0-9]{64})\.img$/;
+            var match = file.name.match(namePattern);
+
+            progressContainer.style.display = 'block';
+            statusText.style.color = 'var(--text-main)';
+            progressBar.style.width = '0%';
+
+            if (!match) {
+                statusText.textContent = 'Fehler: Dateiname entspricht nicht der Konvention (octonet_YYYYMMDD_sha256hash.img)!';
+                statusText.style.color = '#dc3545';
+                return;
+            }
+
+            var datePart = match;
+            var hashPart = match;
+
+            statusText.textContent = 'Dateiname gültig. Datum: ' + datePart + ' | Übertragung gestartet...';
+            
+            uploadFirmwareImage(file, datePart, hashPart);
+        }
+
+        function uploadFirmwareImage(file, date, hash) {
+            var formData = new FormData();
+            formData.append('firmware', file);
+
+            var xhr = new XMLHttpRequest();
+            
+            // Verweist jetzt sicher auf dein dediziertes Upload-Skript
+            xhr.open('POST', '/upload_img.lua', true); 
+
+            // Übergabe der extrahierten Daten im HTTP-Header zur Vermeidung von Speicher-Overhead
+            xhr.setRequestHeader('X-Firmware-Date', date);
+            xhr.setRequestHeader('X-Firmware-Hash', hash);
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    var percent = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percent + '%';
+                    statusText.textContent = 'Übertrage Image: ' + percent + '%';
+                }
+            });
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        statusText.textContent = 'Upload beendet. Das System generiert nun die .img und .sha Dateien im Zielverzeichnis...';
+                        statusText.style.color = '#28a745';
+                    } else {
+                        statusText.textContent = 'Upload-Fehler oder Verzeichniszugriff verweigert (Status: ' + xhr.status + ').';
+                        statusText.style.color = '#dc3545';
+                    }
+                }
+            };
+
+            xhr.send(formData);
+        }
+    </script>
 </body>
 </html>
+

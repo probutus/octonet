@@ -1,227 +1,196 @@
 <!DOCTYPE HTML>
-<html>
+<html lang="de">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>OctopusNet</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
-<script type="text/javascript" src="/menu.js"></script>
-<!--  Add included scripts here -->
-
-<!-- Add page scripts here -->
-<script type="text/javascript">
-
-var xmlhttp = new XMLHttpRequest();
-var url = "/monitor.lua";
-
-xmlhttp.onreadystatechange=function()
-{
-    if (xmlhttp.readyState == 4 )
-    {
-      if( xmlhttp.status == 200 )
-         myFunction(xmlhttp.responseText);
-      else if( xmlhttp.status == 204 )
-         window.setTimeout(Reload,1000);  
-    }
-}
-
-function Reload() 
-{
-   xmlhttp.open("GET", url, true);
-   xmlhttp.send();
-}
-
-function myFunction(response) {
-    var Sensor = JSON.parse(response);
-    var j;
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OctopusNet - Hardware Monitor</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script type="text/javascript" src="/menu.js"></script>
     
-    if( Sensor.NumSensors > 0 )
-    {
-       if( Sensor.NumSensors > 4 ) Sensor.NumSensors = 4;
-       for( j = 0; j < Sensor.NumSensors; j += 1 )
-       {
-          var id = "pts"+j
-          var pts = document.getElementById(id).points;
-          var svgRoot = document.getElementById("svg");
-          
-          var i;
-          var v = Sensor.SensorData[j];
-          var n = v.length;
-          var i0 = 0;
-          if( n > 120 ) 
-          {
-            i0 = n - 120;
-            n = 120;      
-          }
-          pts.clear();
-          for(i = 0; i < n; i += 1)
-          {    
-             var pt = svgRoot.createSVGPoint();
-             pt.x = (i+1) * 20;
-             pt.y = v[i+i0] * 10;
-             pts.appendItem(pt);
-          }
-       }
-       window.setTimeout(Reload,10000);  
-    }
-    else
-    {
-       document.getElementById("TGraph").style.display = "none";
-       document.getElementById("NoSensor").style.display = "block";
-    }
-    if( Sensor.FanSpeed )
-    {
-       document.getElementById("FanStatus").firstChild.nodeValue  = "Fan: "+ Sensor.FanSpeed + " rpm";
-       document.getElementById("FanStatus").style.display = "inline";
-    }
-    if( Sensor.FanState >= 0 )
-    {
-       document.getElementById("FanStatus").firstChild.nodeValue  = "Fan: "+ ( Sensor.FanState > 0 ? "ON" : "OFF" );
-       document.getElementById("FanStatus").style.display = "inline";
-    }
-}
+    <!-- Page scripts -->
+    <script type="text/javascript">
+        var xmlhttp = new XMLHttpRequest();
+        var url = "/monitor.lua";
 
-function OnLoad()
-{
-  window.setTimeout(Reload,1000);  
-}
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState == 4) {
+                if (xmlhttp.status == 200)
+                    myFunction(xmlhttp.responseText);
+                else if (xmlhttp.status == 204)
+                    window.setTimeout(Reload, 1000);
+            }
+        }
 
-</script>
+        function Reload() {
+            xmlhttp.open("GET", url, true);
+            xmlhttp.send();
+        }
 
+        function myFunction(response) {
+            var Sensor = JSON.parse(response);
+            var j;
+            if (Sensor.NumSensors > 0) {
+                document.getElementById("TGraph").style.display = "block";
+                document.getElementById("NoSensor").style.display = "none";
+
+                if (Sensor.NumSensors > 4) Sensor.NumSensors = 4;
+                for (j = 0; j < Sensor.NumSensors; j += 1) {
+                    var id = "pts" + j;
+                    var pts = document.getElementById(id).points;
+                    var svgRoot = document.getElementById("svg");
+                    var i;
+                    var v = Sensor.SensorData[j];
+                    var n = v.length;
+                    var i0 = 0;
+                    if (n > 120) {
+                        i0 = n - 120;
+                        n = 120;
+                    }
+                    pts.clear();
+                    for (i = 0; i < n; i += 1) {
+                        var pt = svgRoot.createSVGPoint();
+                        pt.x = (i + 1) * 20;
+                        pt.y = v[i + i0] * 10;
+                        pts.appendItem(pt);
+                    }
+                }
+                window.setTimeout(Reload, 10000);
+            } else {
+                document.getElementById("TGraph").style.display = "none";
+                document.getElementById("NoSensor").style.display = "block";
+            }
+
+            if (Sensor.FanSpeed) {
+                document.getElementById("FanStatus").firstChild.nodeValue = "Fan: " + Sensor.FanSpeed + " rpm";
+                document.getElementById("FanStatus").style.display = "inline-block";
+            }
+            if (Sensor.FanState >= 0) {
+                document.getElementById("FanStatus").firstChild.nodeValue = "Fan: " + (Sensor.FanState > 0 ? "ON" : "OFF");
+                document.getElementById("FanStatus").style.display = "inline-block";
+            }
+        }
+
+        function OnLoad() {
+            window.setTimeout(Reload, 1000);
+        }
+    </script>
 </head>
 <body onload="OnLoad()">
 
-<table class="maintable">
-  <colgroup>
-    <col width="182px"/>
-    <col width="728px"/>
-  </colgroup>
-  <tr><td class="maintd" colspan="2">
-    <a href="http://www.digitaldevices.de"><img src="/BannerDD.jpg" alt="DD" width="910" height="130" /></a>
-  </td></tr>
-  <tr><td class="maintd" colspan="2">&nbsp;</td></tr>
-  <tr>
-    <td class="maintd"><script type="text/javascript">CreateMenu();</script></td>
-    <td class="content">
-      <div>
-        <!-- Begin Content -->
-         <!--
-         <table>
-            <td colspan="2" align="right">
-              <div style="width: 300px">
-                <form action="">
-                  <input type="Button" value="Reload" onclick="Reload()" >
-                </form>
-              </div>
-            </td>
-         </table>
-         -->
-        <table style="margin: auto; width: 100%; text-align: center">
-           <colgroup>
-             <col width="25%"/>
-             <col width="50%"/>
-             <col width="25%"/>
-           </colgroup>
-           <tr>
-            <td></td>
-            <td>
-               <p>
-               <h3 style="margin: auto; width: 100%; text-align: center">Frontend Temperature</h3>
-            </td>
-            <td>
-              <div id="FanStatus" style="display: none; margin: auto; width: 100%; margin-top: 0px; text-align: right; font-size:70%">
-                  Fan: 2000 rpm
-              </div>
+    <!-- Haupt-Layout-Container analog zu index.html -->
+    <div class="app-container">
+        
+        <!-- Header mit korrekt skaliertem Logo -->
+        <header class="main-header">
+            <a href="http://digitaldevices.de" class="logo-link">
+                <img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
+            </a>
+        </header>
 
-            </td>
-           </tr>
-        </table>
-        
-        
-        
-        <div id="NoSensor" style="display: none; margin: auto; width: 100%; text-align: center">
-            <p>
-            No temperature sensors available
+        <div class="content-wrapper">
+            <!-- Seitennavigation -->
+            <nav class="side-navigation">
+                <script type="text/javascript">CreateMenu();</script>
+            </nav>
+
+            <!-- Hauptinhalt -->
+            <main class="main-content">
+                <div class="headline-group">
+                    <h1>Hardware Monitor</h1>
+                    <h2>Echtzeit-Überwachung der System-Temperaturen</h2>
+                </div>
+
+                <!-- Fehlermeldung, falls keine Sensoren vorhanden sind -->
+                <div id="NoSensor" style="display: none;">
+                    <div class="help-box-card">
+                        <h3>Keine Sensoren</h3>
+                        <p>Es sind aktuell keine Temperatursensoren im System verfügbar.</p>
+                    </div>
+                </div>
+
+                <!-- Monitor-Bereich als Card eingebettet -->
+                <div id="TGraph" class="dashboard-grid" style="display: block;">
+                    <section class="card full-width">
+                        
+                        <!-- Header-Zeile mit Titel und Lüfter-Status-Badge -->
+                        <div class="monitor-header-row">
+                            <h3>Frontend Temperature</h3>
+                            <span id="FanStatus" class="badge-fan" style="display: none;">Fan: -- rpm</span>
+                        </div>
+
+                        <!-- Neuer, optimierter Graph-Container (Unterstützt Dark-Mode) -->
+                        <div class="monitor-graph-container">
+                            <svg id="svg" viewBox="0 0 2600 1200" width="100%" height="auto">
+                                <desc>Temperature</desc>
+                                <g transform="scale(1.0)">
+                                    
+                                    <!-- Hintergrund-Fläche nutzt die CSS-Variable der Card -->
+                                    <rect width="2400" height="1000" x="100" y="100" fill="var(--card-bg)" />
+                                    
+                                    <!-- Hauptachsen -->
+                                    <g style="stroke-width:5; stroke:var(--text-main)">
+                                        <!-- X-Achse -->
+                                        <path d="M 100 1100 L 2500 1100 Z"/>
+                                        <!-- Y-Achse -->
+                                        <path d="M 100 100 L 100 1100 Z"/>
+                                    </g>
+                                    
+                                    <!-- Hilfslinien & Achsenbeschriftung (Dynamische Farben via CSS) -->
+                                    <g style="fill:none; stroke:var(--accent-color); stroke-width:2; stroke-dasharray:4 4; text-anchor:end;" font-size="35">
+                                        <path d="M 102 1100 L 2500 1100 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="1015">10</text>
+                                        <path d="M 102 1000 L 2500 1000 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="915">20</text>
+                                        <path d="M 102 900 L 2500 900 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="815">30</text>
+                                        <path d="M 102 800 L 2500 800 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="715">40</text>
+                                        <path d="M 102 700 L 2500 700 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="615">50</text>
+                                        <path d="M 102 600 L 2500 600 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="515">60</text>
+                                        <path d="M 102 500 L 2500 500 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="415">70</text>
+                                        <path d="M 102 400 L 2500 400 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="315">80</text>
+                                        <path d="M 102 300 L 2500 300 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="215">90</text>
+                                        <path d="M 102 200 L 2500 200 Z"/>
+                                        <text style="fill:var(--text-muted); stroke:none" x="80" y="115">100</text>
+                                        
+                                        <!-- Einheit -->
+                                        <text style="fill:var(--text-main); stroke:none; font-weight:600;" x="100" y="50">&deg;C</text>
+                                        <path d="M 102 100 L 2500 100 Z"/>
+                                    </g>
+                                    
+                                    <!-- Vertikale Zeit-Hilfslinien -->
+                                    <g style="fill:none; stroke:var(--accent-color); stroke-width:2; stroke-dasharray:4 4">
+                                        <path d="M 2500 1100 L 2500 100 Z"/>
+                                        <path d="M 2100 1100 L 2100 100 Z"/>
+                                        <path d="M 1700 1100 L 1700 100 Z"/>
+                                        <path d="M 1300 1100 L 1300 100 Z"/>
+                                        <path d="M 900 1100 L 900 100 Z"/>
+                                        <path d="M 500 1100 L 500 100 Z"/>
+                                    </g>
+                                    
+                                    <!-- Zeichenbereich für Daten-Polylines -->
+                                    <svg x="100" y="100" width="2400" height="1000">
+                                        <g transform="scale(1.0,-1.0) translate(0.0,-1000)">
+                                            <polyline id="pts0" points="0 0," style="stroke:#e63946; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round;"/>
+                                            <polyline id="pts1" points="0 0," style="stroke:#1d3557; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round;"/>
+                                            <polyline id="pts2" points="0 0," style="stroke:#457b9d; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round;"/>
+                                            <polyline id="pts3" points="0 0," style="stroke:#a8dadc; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round;"/>
+                                        </g>
+                                    </svg>
+                                </g>
+                            </svg>
+                        </div>
+                    </section>
+                </div>
+            </main>
         </div>
-
-
-
-        <div id="TGraph" align="center" style="display: block">
-            <svg Id="svg" width="720px" height="330px">
-            <desc>Temperature</desc>
-            <g transform="scale(0.277)">
-               <!-- Now Draw the main X and Y axis -->
-               <rect width="2400" height="1000" x="100" y="100" fill="#FFFFFF" />
-               <g style="stroke-width:5; stroke:black">
-               <!-- X Axis -->
-                     <path d="M 100 1100 L 2500 1100 Z"/>
-               <!-- Y Axis -->
-                     <path d="M 100  100 L  100 1100 Z"/>
-               </g>
-               <!-- Now add some dashes in as a guide -->
-               <g style="fill:none; stroke:#B0B0B0; stroke-width:2; stroke-dasharray:2 4;text-anchor:end;" font-size="35">
-                  <path d="M 102 1100 L 2500 1100 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="1030">10</text>
-                  <path d="M 102 1000 L 2500 1000 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="930">20</text>
-                  <path d="M 102 900 L 2500 900 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="830">30</text>
-                  <path d="M 102 800 L 2500 800 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="730">40</text>
-                  <path d="M 102 700 L 2500 700 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="630">50</text>
-                  <path d="M 102 600 L 2500 600 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="530">60</text>
-                  <path d="M 102 500 L 2500 500 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="430">70</text>
-                  <path d="M 102 400 L 2500 400 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="330">80</text>
-                  <path d="M 102 300 L 2500 300 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="230">90</text>
-                  <path d="M 102 200 L 2500 200 Z"/>
-                  <text style="fill:black; stroke:none" x="90" y="130">100</text>
-                  <text style="fill:black; stroke:none" x="100" y="60">&deg;C</text>
-                  <path d="M 102 100 L 2500 100 Z"/>
-               </g>
-               <g style="fill:none; stroke:#B0B0B0; stroke-width:2; stroke-dasharray:2 4">
-                  <path d="M 2500 1100 L 2500 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="2500" y="1125">0</text>-->
-                  <path d="M 2100 1100 L 2100 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="2100" y="1125">-10</text>-->
-                  <path d="M 1700 1100 L 1700 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="1700" y="1125">-20</text>-->
-                  <path d="M 1300 1100 L 1300 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="1300" y="1125">-30</text>-->
-                  <path d="M  900 1100 L  900 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="900" y="1125">-40</text>-->
-                  <path d="M  500 1100 L  500 100 Z"/>
-                  <!--<text style="fill:black; stroke:none" x="500" y="1125">-50</text>-->
-                  <!--<text style="fill:black; stroke:none" x="1100" y="1140">Minutes</text>-->
-               </g>
-               <svg x="100" y="100" width="2400" height="1000">
-                  <g transform="scale(1.0,-1.0) translate(0.0,-1000)">
-                     <polyline Id="pts0" 
-                        points="0 0,"
-                        style="stroke:#C00000; stroke-width: 3; fill : none;"/>
-                     <polyline Id="pts1" 
-                        points="0 0,"
-                        style="stroke:#0000C0; stroke-width: 3; fill : none;"/>
-                     <polyline Id="pts2" 
-                        points="0 0,"
-                        style="stroke:#00C000; stroke-width: 3; fill : none;"/>
-                     <polyline Id="pts3" 
-                        points="0 0,"
-                        style="stroke:#C000C0; stroke-width: 3; fill : none;"/>
-                  </g>
-               </svg>
-            </g>
-            </svg>
-        </div>
-        <!-- End Content -->
-      </div>
-    </td>
-  </tr>
-  <tr><td colspan="2">&nbsp;</td></tr>
-</table>
+    </div>
 
 </body>
 </html>
+

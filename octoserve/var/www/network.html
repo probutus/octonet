@@ -1,0 +1,270 @@
+<!DOCTYPE HTML>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OctopusNet - Network Settings</title>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script type="text/javascript" src="/menu.js"></script>
+    
+    <style type="text/css">
+        /* Visuelles Feedback für Validierungsfehler */
+        .input-error {
+            border: 2px solid #dc3545 !important;
+            background-color: rgba(220, 53, 69, 0.05) !important;
+        }
+    </style>
+
+    <script type="text/javascript">
+        var xmlhttp = new XMLHttpRequest();
+        
+        // Lädt die aktuelle Konfiguration vom Gerät beim Laden der Seite
+        function LoadNetworkSettings() {
+            xmlhttp.onreadystatechange = function() {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    var config = JSON.parse(xmlhttp.responseText);
+                    
+                    // FALL 1: NFS-Boot erkannt -> UI komplett sperren
+                    if (config.mode === "nfs") {
+                        document.getElementById("nfs-warning").style.display = "block";
+                        document.getElementById("network-form-card").style.opacity = "0.5";
+                        document.getElementById("network-submit-btn").disabled = true;
+                        document.getElementById("mode-dhcp").disabled = true;
+                        document.getElementById("mode-static").disabled = true;
+                        ToggleFields(false);
+                        return;
+                    }
+                    
+                    // FALL 2: Regulärer Betrieb
+                    if (config.mode === "static") {
+                        document.getElementById("mode-static").checked = true;
+                        document.getElementById("IP").value = config.ip || "";
+                        document.getElementById("NETMASK").value = config.netmask || "";
+                        document.getElementById("GATEWAY").value = config.gateway || "";
+                        document.getElementById("DNS").value = config.dns || "";
+                        ToggleFields(true);
+                    } else {
+                        document.getElementById("mode-dhcp").checked = true;
+                        ToggleFields(false);
+                    }
+                }
+            };
+            xmlhttp.open("GET", "/network.lua?action=get", true);
+            xmlhttp.send();
+        }
+
+        // Blendet die IP-Eingabefelder je nach Modus ein/aus
+        function ToggleFields(isStatic) {
+            var fields = document.getElementById("static-fields");
+            fields.style.display = isStatic ? "block" : "none";
+            document.getElementById("IP").required = isStatic;
+            document.getElementById("NETMASK").required = isStatic;
+            document.getElementById("GATEWAY").required = isStatic;
+            
+            // Fehler-Markierungen beim Modus-Wechsel aufräumen
+            if (!isStatic) {
+                var inputs = ['IP', 'NETMASK', 'GATEWAY', 'DNS'];
+                inputs.forEach(function(id) {
+                    document.getElementById(id).classList.remove("input-error");
+                });
+                document.getElementById("status-msg").style.display = "none";
+            }
+        }
+
+        // Hilfsfunktion zur strikten Validierung von IPv4-Adressen (0-255 je Oktett)
+        function isValidIPv4(ip) {
+            var blocks = ip.split('.');
+            if (blocks.length !== 4) return false;
+            
+            for (var i = 0; i < blocks.length; i++) {
+                var num = Number(blocks[i]);
+                if (blocks[i] === "" || isNaN(num) || num < 0 || num > 255) {
+                    return false;
+                }
+                // Verhindert führende Nullen wie "192.168.01.1" (Wichtig für POSIX-Shell/Scripts)
+                if (blocks[i].length > 1 && blocks[i].startsWith('0')) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Sendet die neuen Einstellungen speicherschonend ans Backend
+        function SaveNetworkSettings(event) {
+            event.preventDefault();
+            var mode = document.querySelector('input[name="mode"]:checked').value;
+            var statusDiv = document.getElementById("status-msg");
+            
+            var staticIp = document.getElementById("IP").value.trim();
+            var netmask = document.getElementById("NETMASK").value.trim();
+            var gateway = document.getElementById("GATEWAY").value.trim();
+            var dns = document.getElementById("DNS").value.trim();
+
+            statusDiv.style.display = "block";
+            statusDiv.style.color = "var(--text-main)";
+
+            // Alle vorherigen Fehler-Markierungen entfernen
+            var inputs = ['IP', 'NETMASK', 'GATEWAY', 'DNS'];
+            inputs.forEach(function(id) { document.getElementById(id).classList.remove("input-error"); });
+
+            // Strikte Validierung nur im statischen Modus ausführen
+            if (mode === "static") {
+                if (!isValidIPv4(staticIp)) {
+                    statusDiv.textContent = "❌ Fehler: Ungültige IP-Adresse (jedes Oktett muss zwischen 0 und 255 liegen)!";
+                    statusDiv.style.color = "#dc3545";
+                    document.getElementById("IP").classList.add("input-error");
+                    document.getElementById("IP").focus();
+                    return;
+                }
+                if (!isValidIPv4(netmask)) {
+                    statusDiv.textContent = "❌ Fehler: Ungültige Subnetzmaske (z.B. 255.255.255.0)!";
+                    statusDiv.style.color = "#dc3545";
+                    document.getElementById("NETMASK").classList.add("input-error");
+                    document.getElementById("NETMASK").focus();
+                    return;
+                }
+                if (!isValidIPv4(gateway)) {
+                    statusDiv.textContent = "❌ Fehler: Ungültiges Standard-Gateway!";
+                    statusDiv.style.color = "#dc3545";
+                    document.getElementById("GATEWAY").classList.add("input-error");
+                    document.getElementById("GATEWAY").focus();
+                    return;
+                }
+                if (dns !== "" && !isValidIPv4(dns)) {
+                    statusDiv.textContent = "❌ Fehler: Ungültige DNS-Server-IP!";
+                    statusDiv.style.color = "#dc3545";
+                    document.getElementById("DNS").classList.add("input-error");
+                    document.getElementById("DNS").focus();
+                    return;
+                }
+            }
+
+            statusDiv.textContent = "Speichere Einstellungen...";
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/network.lua", true);
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+            
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    statusDiv.style.color = "#28a745";
+                    
+                    // Countdown-Logik, da das Netzwerk im Hintergrund neu startet
+                    var seconds = 8;
+                    var interval = setInterval(function() {
+                        statusDiv.innerHTML = "🔄 <strong>Netzwerk wird neu gestartet...</strong><br>Schnittstelle eth0 wird via ifdown/ifup reinitialisiert. Versuche Weiterleitung in " + seconds + " Sekunden.";
+                        seconds--;
+                        
+                        if (seconds < 0) {
+                            clearInterval(interval);
+                            if (mode === "static" && staticIp) {
+                                window.location.href = "http://" + staticIp + "/network.html";
+                            } else {
+                                window.location.href = "http://octonet-pro/network.html";
+                            }
+                        }
+                    }, 1000);
+                } else if (xhr.readyState == 4) {
+                    statusDiv.textContent = "Fehler beim Speichern (Status: " + xhr.status + "). Keine Änderungen übernommen.";
+                    statusDiv.style.color = "#dc3545";
+                }
+            };
+
+            var params = "action=save&mode=" + mode;
+            if (mode === "static") {
+                params += "&ip=" + encodeURIComponent(staticIp)
+                       + "&netmask=" + encodeURIComponent(netmask)
+                       + "&gateway=" + encodeURIComponent(gateway)
+                       + "&dns=" + encodeURIComponent(dns);
+            }
+            xhr.send(params);
+        }
+    </script>
+</head>
+<body onload="LoadNetworkSettings()">
+    <div class="app-container">
+        
+        <header class="main-header">
+            <a href="http://digitaldevices.de" class="logo-link">
+                <img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
+            </a>
+        </header>
+
+        <div class="content-wrapper">
+            <nav class="side-navigation">
+                <script type="text/javascript">CreateMenu();</script>
+            </nav>
+
+            <main class="main-content">
+                <div class="headline-group">
+                    <h1>Network Settings</h1>
+                    <h2>Netzwerkinterface eth0 konfigurieren</h2>
+                </div>
+
+                <!-- Dynamische NFS-Warnbox (Standardmäßig ausgeblendet) -->
+                <div id="nfs-warning" style="display: none; margin-bottom: 25px;">
+                    <div class="help-box-card" style="border-left: 4px solid #ffb703;">
+                        <h3>⚠️ Netzwerk-Konfiguration gesperrt</h3>
+                        <p>
+                            Das System wurde über ein Netzwerk-Dateisystem (NFS-Boot) gestartet. 
+                            Ein Ändern oder Neustarten des Interfaces <strong>eth0</strong> würde die Verbindung zum Root-Dateisystem trennen 
+                            und eine Kernel-Panik (Systemabsturz) auslösen. Einstellungen sind im NFS-Modus deaktiviert.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <section class="card full-width" id="network-form-card">
+                        <h3>IP-Adresszuweisung</h3>
+                        
+                        <form onsubmit="SaveNetworkSettings(event)" style="margin-top: 15px;">
+                            <!-- Modus-Auswahl -->
+                            <div style="display: flex; gap: 30px; margin-bottom: 25px; background: var(--bg-color); padding: 15px; border-radius: var(--border-radius);">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+                                    <input type="radio" id="mode-dhcp" name="mode" value="dhcp" checked onclick="ToggleFields(false)" style="transform: scale(1.2);"> 
+                                    DHCP (Automatisch)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
+                                    <input type="radio" id="mode-static" name="mode" value="static" onclick="ToggleFields(true)" style="transform: scale(1.2);"> 
+                                    Statische IP (Manuell)
+                                </label>
+                            </div>
+
+                            <!-- Statische IP Eingabefelder -->
+                            <div id="static-fields" style="display: none; margin-bottom: 20px;">
+                                <table class="data-table" style="max-width: 500px;">
+                                    <tr>
+                                        <td><label for="IP"><strong>IP-Adresse:</strong></label></td>
+                                        <td><input type="text" id="IP" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 192.168.1.50" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" title="Bitte eine gültige IPv4-Adresse eingeben (0-255 pro Block)"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label for="NETMASK"><strong>Subnetzmaske:</strong></label></td>
+                                        <td><input type="text" id="NETMASK" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 255.255.255.0" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" title="Bitte eine gültige Subnetzmaske eingeben"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label for="GATEWAY"><strong>Standard-Gateway:</strong></label></td>
+                                        <td><input type="text" id="GATEWAY" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 192.168.1.1" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" title="Bitte ein gültiges Gateway eingeben"></td>
+                                    </tr>
+                                    <tr>
+                                        <td><label for="DNS"><strong>DNS-Server:</strong></label></td>
+                                        <td><input type="text" id="DNS" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 8.8.8.8 (Optional)" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" title="Bitte eine gültige DNS-Server-IP eingeben oder leer lassen"></td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Status-Meldung -->
+                            <p id="status-msg" class="font-bold" style="display: none; margin-bottom: 15px; font-size: 0.95rem;"></p>
+
+                            <!-- Absenden-Button -->
+                            <div class="button-container">
+                                <input type="submit" id="network-submit-btn" class="btn btn-primary" value="Einstellungen speichern">
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

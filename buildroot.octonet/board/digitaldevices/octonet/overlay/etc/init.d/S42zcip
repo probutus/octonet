@@ -1,0 +1,51 @@
+#!/bin/sh
+
+INTERFACE="eth0"
+SCRIPT="/etc/network/zcip.script"
+
+case "$1" in
+    start)
+        printf "Checking network status for ZCIP fallback: "
+        
+        # 1. SCHUTZWALL: Bei NFS-Boot darf ZCIP niemals dazwischenfunken
+        if grep -q "root=/dev/nfs" /proc/cmdline || grep -q "nfsroot=" /proc/cmdline; then
+            echo "NFS active, skipping ZCIP."
+            exit 0
+        fi
+
+        # 2. PRÜFUNG: Hat eth0 bereits eine gültige IP-Adresse (außer der 169.254. Link-Local)?
+        # Wenn udhcpc oder die statische Konfiguration erfolgreich waren, brechen wir ab.
+        CURRENT_IP=$(ifconfig $INTERFACE 2>/dev/null | grep 'inet addr:' | cut -d: -f2 | awk '{print $1}')
+        
+        if [ -n "$CURRENT_IP" ] && ! echo "$CURRENT_IP" | grep -q "^169\.254\."; then
+            echo "OK (Interface already has IP $CURRENT_IP)"
+            exit 0
+        fi
+
+        # 3. FALLBACK: Interface ist leer oder hat nur Link-Local -> ZCIP im Hintergrund starten
+        echo "No IP found! Starting ZeroConf Daemon (ZCIP)..."
+        killall zcip 2>/dev/null
+        # -b startet zcip als Daemon im Hintergrund und blockiert den Bootvorgang nicht
+        zcip $INTERFACE $SCRIPT
+        ;;
+        
+    stop)
+        printf "Stopping ZCIP daemon: "
+        killall zcip 2>/dev/null
+        echo "OK"
+        ;;
+        
+    restart)
+        "$0" stop
+        sleep 1
+        "$0" start
+        ;;
+        
+    *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit 0
+
+
