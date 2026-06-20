@@ -19,7 +19,7 @@ do_config() {
     fi
 
     killall zcip > /dev/null
-    /sbin/ifconfig $interface $ip  $NETMASK
+    /sbin/ifconfig $interface $ip netmask $NETMASK
     
     while route del default gw 0.0.0.0 dev $interface ; do
 	:
