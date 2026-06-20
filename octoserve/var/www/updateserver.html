@@ -15,11 +15,11 @@
   var UpdateAvailable = false;
 
   function FWVersion(fwdate) {
-    if (fwdate.length > 0) {
+    if (fwdate && fwdate.length > 0) {
       var date = new Date(1);
-      date.setUTCDate(fwdate.substr(4,2));
       date.setUTCFullYear("20" + fwdate.substr(0,2));
       date.setUTCMonth(fwdate.substr(2,2) - 1);
+      date.setUTCDate(fwdate.substr(4,2));
       date.setUTCHours(fwdate.substr(6,2));
       date.setUTCMinutes(fwdate.substr(8,2));
       var ds = date.toGMTString();
@@ -51,14 +51,11 @@
       if (UpdateStatus.Info != "") {
         document.getElementById("UpdateButton").value = "Update starten";    
         document.getElementById("UpdateButton").className = "btn btn-primary";    
-        document.getElementById("updatemsg").firstChild.nodeValue = 
-          "Neue Firmware / Systempaket verfügbar!";    
-        document.getElementById("updatestatus").firstChild.nodeValue = 
-          "Version: " + FWVersion(UpdateStatus.Info);    
+        document.getElementById("updatemsg").textContent = "Neue Firmware / Systempaket verfügbar!";    
+        document.getElementById("updatestatus").textContent = "Version: " + FWVersion(UpdateStatus.Info);    
         UpdateAvailable = true;
       } else {
-        document.getElementById("updatestatus").firstChild.nodeValue = 
-          "Deine Systemsoftware ist auf dem neuesten Stand.";    
+        document.getElementById("updatestatus").textContent = "Deine Systemsoftware ist auf dem neuesten Stand.";    
       }
       document.getElementById("UpdateButton").disabled = false;    
   }
@@ -72,16 +69,12 @@
       } else {
         var statusBox = document.getElementById("scan-status-box");
         if (statusBox) statusBox.style.display = "flex";
-        document.getElementById("updatestatus").firstChild.nodeValue = 
-          "Suche nach Updates...";
-          
-        // KORREKTUR: Wieder auf das originale Update-Skript des Systems verweisen!
+        document.getElementById("updatestatus").textContent = "Suche nach Updates...";
         Request("/update.lua?check"); 
       }
     }
   }
 
-  // --- Server-Auswahl-Steuerung ---
   function ToggleServerFields(isCustom) {
       var container = document.getElementById("custom-server-fields");
       if (container) {
@@ -93,7 +86,6 @@
       }
   }
 
-  // Strikte Validierung der privaten Subnetze
   function isValidLocalIPv4(ip) {
       var blocks = ip.split('.');
       if (blocks.length !== 4) return false;
@@ -163,12 +155,9 @@
                   saveStatus.textContent = "✅ Server-Konfiguration erfolgreich angepasst!";
                   saveStatus.style.color = "#28a745";
 
-                  // KORREKTUR: JavaScript-Kommentarstil korrigiert (// statt --)
-                  // Reset-Logik für die Update-Anzeige bei Quellenwechsel
                   UpdateAvailable = false;
                   isChecking = false;
                   
-                  // 1. Setzt den Button zurück auf den "Prüfen"-Standard
                   var updateBtn = document.getElementById("UpdateButton");
                   if (updateBtn) {
                       updateBtn.value = "Prüfen";
@@ -176,13 +165,11 @@
                       updateBtn.disabled = false;
                   }
                   
-                  // 2. Setzt den originalen Hinweistext der Karte zurück
                   var updateMsg = document.getElementById("updatemsg");
                   if (updateMsg) {
-                      updateMsg.firstChild.nodeValue = "Firmware / System-Paket überprüfen";
+                      updateMsg.textContent = "Firmware / System-Paket überprüfen";
                   }
                   
-                  // 3. Verbirgt die alte Status-Anzeige des vorherigen Servers wieder
                   var statusBox = document.getElementById("scan-status-box");
                   if (statusBox) {
                       statusBox.style.display = "none";
@@ -190,7 +177,7 @@
                   
                   var updateStatusText = document.getElementById("updatestatus");
                   if (updateStatusText) {
-                      updateStatusText.firstChild.nodeValue = "Initialisiere Suche...";
+                      updateStatusText.textContent = "Initialisiere Suche...";
                   }
 
               } else {
@@ -203,7 +190,7 @@
   }
   </script>
 </head>
-<body onload="InitDragAndDrop()">
+<body onload="LoadServerConfig()">
   <div class="app-container">
     
     <header class="main-header">
@@ -226,7 +213,6 @@
         <div class="dashboard-grid">
           <section class="card full-width text-center-content">
             
-            <!-- Server-Auswahlkomponente -->
             <h3 class="margin-bottom">Updateserver-Quelle konfigurieren</h3>
             
             <form onsubmit="SaveServerConfig(event)" style="max-width: 500px; margin: 0 auto 25px auto;">
@@ -259,7 +245,6 @@
 
             <hr class="card-divider" style="margin: 30px 0; border: none; border-bottom: 2px solid var(--accent-color);"/>
 
-            <!-- Originale Online-Prüfung -->
             <div class="update-warning-icon">🔄</div>
             
             <h3 id="updatemsg" class="margin-bottom">Firmware / System-Paket überprüfen</h3>
@@ -270,13 +255,12 @@
             </p>
 
             <div class="center-content margin-top-heavy">
-              <form action="" class="margin-none">
+              <form action="" class="margin-none" onsubmit="return false;">
                  <input id="UpdateButton" type="button" class="btn btn-secondary" 
                         value="Prüfen" onclick="CheckUpdate()" />
               </form>
             </div>
 
-            <!-- Status-Anzeige (Wird bei Aktivierung eingeblendet) -->
             <div id="scan-status-box" class="status-display-box justify-center margin-top-heavy" style="display: none;">
               <span id="scancount" class="status-count">i</span>
               <span id="updatestatus" class="status-msg font-bold">Initialisiere Suche...</span>

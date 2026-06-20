@@ -38,15 +38,19 @@ local hex_to_char = function(x)
    return string.char(tonumber(x,16))
 end
 
--- Helper zum Parsen des application/x-www-form-urlencoded POST Bodies
+-- Robustes Parsen des application/x-www-form-urlencoded POST Bodies
 local function parse_post_body()
     local params = {}
     local len = tonumber(os.getenv("CONTENT_LENGTH")) or 0
     if len > 0 then
-        local body = io.read(len)
-        for k, v in string.gmatch(body, "([^&=]+)=([^&=]+)") do
-            v = string.gsub(v, "%%(%x%x)", hex_to_char)
-            params[k] = v
+        local body = io.read(len) or ""
+        for pair in string.gmatch(body, "[^&]+") do
+            local k, v = string.match(pair, "([^=]+)=(.*)")
+            if k and v then
+                v = string.gsub(v, "+", " ")
+                v = string.gsub(v, "%%(%x%x)", hex_to_char)
+                params[k] = v
+            end
         end
     end
     return params
@@ -89,10 +93,11 @@ if method == "GET" and query:match("getserver=1") then
             http_print('{"type": "official", "ip": ""}')
         end
     end
-    return
+    -- Beendet die Weboberflächen-Abfrage sofort, um das originale System-Fallback nicht zu stören
+    os.exit()
 end
 
--- 2. POST-ZWEIG: Verarbeitet das Umschalten und Sichern (.bak)
+-- 2. POST-ZWEIG: Verarbeitet das Umschalten und Sichern der reinen IP
 if method == "POST" then
     local params = parse_post_body()
     if params.action == "saveserver" then
@@ -111,32 +116,41 @@ if method == "POST" then
             end
             delimages = true
         elseif params.type == "custom" and params.ip and params.ip ~= "" then
-            -- Custom gewählt: Originale DNS & Lokale-Subnetz Validierung durchführen
-            local custom_url = params.ip
-            local valid = false
-            local path = url.parse("http://" .. custom_url)
+            -- Custom gewählt: Whitespaces entfernen, IP-Format erzwingen ohne http://
+            local clean_ip = params.ip:gsub("%s+", ""):gsub("^https?://", "")
             
-            if path.host then
-                local ip = socket.dns.toip(path.host) or path.host
-                local p1, p2 = ip:match("(%d+)%.(%d+)%.%d+%.%d+")
-                if p1 and p2 then
-                    p1, p2 = tonumber(p1), tonumber(p2)
-                    valid = (p1 == 10) or ((p1 == 172) and (p2 >= 16) and (p2 <= 31)) or ((p1 == 192) and (p2 == 168))
-                end
+            -- Für die Luasocket-Validierung temporär ein Protokoll anfügen, damit url.parse funktioniert
+            local test_url = "http://" .. clean_ip
+            local valid = false
+            local path = url.parse(test_url)
+            local host_to_check = path.host or clean_ip
+            
+            -- Strikte Validierung der privaten Subnetze (10.x, 172.16-31.x, 192.168.x)
+            local ip = host_to_check
+            if not host_to_check:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$") then
+                ip = socket.dns.toip(host_to_check) or host_to_check
+            end
+            
+            local p1, p2 = ip:match("^(%d+)%.(%d+)%.%d+%.%d+$")
+            if p1 and p2 then
+                p1, p2 = tonumber(p1), tonumber(p2)
+                valid = (p1 == 10) or ((p1 == 172) and (p2 >= 16) and (p2 <= 31)) or ((p1 == 192) and (p2 == 168))
             end
             
             if valid then
                 os.remove(server_file)
                 local file = io.open(server_file, "w")
                 if file then
-                    file:write(custom_url .. "\n")
+                    -- Schreibt NUR die reine IP und unterdrückt den Zeilenumbruch (\n)
+                    file:write(clean_ip)
                     file:close()
                     os.remove(server_bak) -- Aktives Überschreiben löscht das Backup
                     delimages = true
                 end
             else
                 http_print(proto .. " 400 Bad Request")
-                http_print("Content-Type: text/plain\n")
+                http_print("Content-Type: text/plain")
+                http_print()
                 http_print("Fehler: Ungueltige oder nicht-lokale IP/URL.")
                 return
             end
@@ -148,7 +162,8 @@ if method == "POST" then
         end
         
         http_print(proto .. " 200 OK")
-        http_print("Content-Type: text/plain\n")
+        http_print("Content-Type: text/plain")
+        http_print()
         http_print("OK")
         return
     end
@@ -177,15 +192,23 @@ elseif query:sub(1,4) == "set=" then
     if userver ~= "" then
       userver = userver:gsub("%%(%x%x)", hex_to_char)
       local valid = false
-      local path = url.parse("http://" .. userver)
-      if path.host then
-         local ip = socket.dns.toip(path.host) or path.host
-         local p1, p2 = ip:match("(%d+)%.(%d+)%.%d+%.%d+")
-         if p1 and p2 then
-             p1 = tonumber(p1)
-             p2 = tonumber(p2)
-             valid = (p1 == 10) or ((p1 == 172) and (p2 >= 16) and (p2 <= 31)) or ((p1 == 192) and (p2 == 168))          
-         end
+      
+      local parse_url = userver
+      if not parse_url:match("^http") then parse_url = "http://" .. parse_url end
+      
+      local path = url.parse(parse_url)
+      local host_to_check = path.host or userver
+      
+      local ip = host_to_check
+      if not host_to_check:match("^(%d+)%.(%d+)%.%d+%.%d+$") then
+          ip = socket.dns.toip(host_to_check) or host_to_check
+      end
+      
+      local p1, p2 = ip:match("^(%d+)%.(%d+)%.%d+%.%d+$")
+      if p1 and p2 then
+          p1 = tonumber(p1)
+          p2 = tonumber(p2)
+          valid = (p1 == 10) or ((p1 == 172) and (p2 >= 16) and (p2 <= 31)) or ((p1 == 192) and (p2 == 168))          
       end
       if valid then
          local file = io.open(server_file, "w")
