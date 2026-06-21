@@ -4,6 +4,7 @@ mc = {}
 
 local DebugFlag = true
 local socket = require("socket")
+local rtsp = require("rtsp") -- KORREKTUR: Dieses Modul hat gefehlt und verhinderte das KeepAlive!
 
 function mc.CheckSignal()
   local tmp = io.open("/tmp/mc.signal")

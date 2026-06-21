@@ -24,7 +24,8 @@ function GetIPAddr()
   if ifconfig then
     local eth0 = ifconfig:read("*a")
     ifconfig:close()  
-    myip = string.match(eth0,"inet addr%:(%d+%.%d+%.%d+%.%d+)")
+    -- KORREKTUR: Flexibles Suchmuster fuer "inet addr", das Leerzeichen und Doppelpunkte akzeptiert
+    myip = string.match(eth0,"inet addr%s*%:?%s*(%d+%.%d+%.%d+%.%d+)")
   end
   return myip
 end
@@ -88,25 +89,3 @@ while true do
   collectgarbage()
 end
 
-
-
-  -- local server = socket.tcp()
-  -- server:settimeout(2)
-
-  -- local cseq = 1
-
-  -- if server:connect(ip,554) then
-    -- rtsp:SendRequest(server,ip,"DESCRIBE",nil,cseq)
-    -- local rc,attributes,sdp = rtsp:ReadResponse(server)
-    -- cseq = cseq + 1
-    -- print(rc)
-    -- for n,a in pairs(attributes) do
-      -- print(n,a)
-    -- end
-    -- if sdp then
-      -- for i,a in ipairs(sdp) do
-        -- print(string.format("%2d:%s",i,a))
-      -- end
-    -- end
-    -- server:close()
-  -- end

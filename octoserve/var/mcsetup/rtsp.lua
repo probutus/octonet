@@ -7,9 +7,14 @@ local CRLF = "\r\n"
 
 local function SplitLines(s)
   local lines = {}
-  local line = nil
-  for line in string.gmatch(s,"(.-)"..CRLF) do
-    table.insert(lines,line)
+  -- KORREKTUR: Robusterer Splitter, der auch die letzte Zeile erfasst, 
+  -- selbst wenn kein CRLF am Ende der SDP-Datei steht
+  for line in string.gmatch(s .. "\n", "([^\n]*)\n") do
+    -- Entfernt eventuell verbleibende Wagenruecklaeufe (\r)
+    local clean_line = string.gsub(line, "\r", "")
+    if #clean_line > 0 or line == "" then
+      table.insert(lines, clean_line)
+    end
   end
   return lines
 end
@@ -47,7 +52,6 @@ function rtsp:ReadResponse(server)
     if n and v then
       attributes[string.upper(n)] = v
     end
-    
   end
   
   local sdp = nil
@@ -92,3 +96,4 @@ function rtsp:SendRequest(server,ip,command,request,cseq,session_transport,x_oct
 end
 
 return rtsp
+
