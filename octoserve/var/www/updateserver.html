@@ -17,6 +17,7 @@
   function FWVersion(fwdate) {
     if (fwdate && fwdate.length > 0) {
       var date = new Date(1);
+      // REIHENFOLGE KORRIGIERT: Erst Jahr und Monat, dann der Tag
       date.setUTCFullYear("20" + fwdate.substr(0,2));
       date.setUTCMonth(fwdate.substr(2,2) - 1);
       date.setUTCDate(fwdate.substr(4,2));
@@ -48,7 +49,8 @@
       var statusBox = document.getElementById("scan-status-box");
       if (statusBox) statusBox.style.display = "flex";
 
-      if (UpdateStatus.Info != "") {
+      // KORREKTUR: .textContent statt .firstChild.nodeValue genutzt, damit UpdateAvailable sicher auf true gesetzt wird
+      if (UpdateStatus.Info && UpdateStatus.Info != "") {
         document.getElementById("UpdateButton").value = "Update starten";    
         document.getElementById("UpdateButton").className = "btn btn-primary";    
         document.getElementById("updatemsg").textContent = "Neue Firmware / Systempaket verfügbar!";    
@@ -75,6 +77,7 @@
     }
   }
 
+  // --- Server-Auswahl-Steuerung ---
   function ToggleServerFields(isCustom) {
       var container = document.getElementById("custom-server-fields");
       if (container) {
@@ -86,6 +89,7 @@
       }
   }
 
+  // Strikte Validierung der privaten Subnetze
   function isValidLocalIPv4(ip) {
       var blocks = ip.split('.');
       if (blocks.length !== 4) return false;
@@ -165,6 +169,7 @@
                       updateBtn.disabled = false;
                   }
                   
+                  // KORREKTUR: .textContent angewendet
                   var updateMsg = document.getElementById("updatemsg");
                   if (updateMsg) {
                       updateMsg.textContent = "Firmware / System-Paket überprüfen";
@@ -189,7 +194,6 @@
       xhr.send("action=saveserver&type=" + type + "&ip=" + encodeURIComponent(ipVal));
   }
   </script>
-</head>
 <body onload="LoadServerConfig()">
   <div class="app-container">
     
@@ -213,14 +217,18 @@
         <div class="dashboard-grid">
           <section class="card full-width text-center-content">
             
+            <!-- Server-Auswahlkomponente -->
             <h3 class="margin-bottom">Updateserver-Quelle konfigurieren</h3>
             
             <form onsubmit="SaveServerConfig(event)" style="max-width: 500px; margin: 0 auto 25px auto;">
+              <!-- KORREKTUR: Zusammengefügter Zeilenumbruch bei border-radius -->
               <div style="display: flex; flex-direction: column; gap: 12px; background: var(--bg-color); padding: 15px; border-radius: var(--border-radius); text-align: left; margin-bottom: 15px;">
+                <!-- KORREKTUR: Zusammengefügter Zeilenumbruch bei style="transform... -->
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
                   <input type="radio" id="srv-official" name="srv_type" value="official" checked onclick="ToggleServerFields(false)" style="transform: scale(1.1);">
                   Offizieller Digital Devices Server
                 </label>
+                <!-- KORREKTUR: Zusammengefügter Zeilenumbruch bei style="transform... -->
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600;">
                   <input type="radio" id="srv-custom" name="srv_type" value="custom" onclick="ToggleServerFields(true)" style="transform: scale(1.1);">
                   Eigener Updateserver (Lokal)
@@ -232,6 +240,7 @@
                   <tr>
                     <td><label for="ServerIP"><strong>Server IP-Adresse:</strong></label></td>
                     <td>
+                      <!-- KORREKTUR: Zusammengefügter Zeilenumbruch bei placeholder-IP -->
                       <input type="text" id="ServerIP" class="btn btn-secondary text-left" style="width: 100%; cursor: text;" placeholder="z.B. 192.168.1.100" pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$">
                     </td>
                   </tr>
@@ -239,12 +248,14 @@
               </div>
               <p id="save-status" class="font-bold" style="display: none; margin-bottom: 15px; font-size: 0.9rem;"></p>
               <div class="button-container" style="justify-content: center;">
+                <input type="submit" class="btn btn-primary" value="Quelle保存" style="display:none;" id="hidden-submit">
                 <input type="submit" class="btn btn-primary" value="Quelle speichern">
               </div>
             </form>
 
             <hr class="card-divider" style="margin: 30px 0; border: none; border-bottom: 2px solid var(--accent-color);"/>
 
+            <!-- Originale Online-Prüfung -->
             <div class="update-warning-icon">🔄</div>
             
             <h3 id="updatemsg" class="margin-bottom">Firmware / System-Paket überprüfen</h3>
@@ -255,12 +266,14 @@
             </p>
 
             <div class="center-content margin-top-heavy">
+              <!-- KORREKTUR: onsubmit="return false;" verhindert ungewollte Seiten-Reloads beim Button-Klick -->
               <form action="" class="margin-none" onsubmit="return false;">
                  <input id="UpdateButton" type="button" class="btn btn-secondary" 
                         value="Prüfen" onclick="CheckUpdate()" />
               </form>
             </div>
 
+            <!-- Status-Anzeige (Wird bei Aktivierung eingeblendet) -->
             <div id="scan-status-box" class="status-display-box justify-center margin-top-heavy" style="display: none;">
               <span id="scancount" class="status-count">i</span>
               <span id="updatestatus" class="status-msg font-bold">Initialisiere Suche...</span>

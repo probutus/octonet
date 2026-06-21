@@ -13,7 +13,6 @@
   function FWVersion(fwdate) {
     if (fwdate && fwdate.length > 0) {
       var date = new Date(1);
-      // REIHENFOLGE KORRIGIERT: Erst Jahr und Monat, dann der Tag
       date.setUTCFullYear("20" + fwdate.substr(0,2));
       date.setUTCMonth(fwdate.substr(2,2) - 1);
       date.setUTCDate(fwdate.substr(4,2));
@@ -41,7 +40,7 @@
      if(isReboot) return;
      var UpdateStatus = JSON.parse(response);
      
-     // KORREKTUR: .textContent statt des riskanten .firstChild.nodeValue genutzt
+     // KORREKTUR: .textContent verhindert den DOM-Absturz
      if(UpdateStatus.Error) {
        document.getElementById("UpdateButton").disabled = false;    
        document.getElementById("UpdateButton").value = "Continue";    
@@ -71,8 +70,8 @@
   }
 
   function DoUpdate() {
-    document.getElementById("updatestatus").textContent = "Checking for updates...";
-    Request("/update.lua?update");
+     document.getElementById("updatestatus").textContent = "Checking for updates...";
+     Request("/update.lua?update");
   }
 
   function Reboot() {
@@ -100,7 +99,7 @@
   </script>
 </head>
 
-<!-- KORREKTUR: Fehlender Tag-Anfang repariert, onload triggert jetzt wieder sauber -->
+<!-- KORREKTUR: Validierter und reparierter body-Tag -->
 <body onload="DoUpdate()">
   <div class="app-container">
     
@@ -109,7 +108,6 @@
     </header>
 
     <div class="content-wrapper">
-      <!-- Leere Navigation zur Vermeidung von Interaktionen während des Flashvorgangs -->
       <nav class="side-navigation" style="opacity: 0.4; pointer-events: none;">
         <ul class="menu-list">
           <li class="menucur"><span>Update läuft...</span></li>

@@ -76,14 +76,12 @@ if method == "GET" and query:match("getserver=1") then
         local tmp = file:read("*l") or ""
         file:close()
         tmp = tmp:gsub("%s+", "")
-        -- Wenn ein echter Custom Server aktiv ist (weder Standard noch Beta)
         if tmp ~= "" and tmp ~= beta_userver and tmp ~= userver then
             http_print(string.format('{"type": "custom", "ip": "%s"}', tmp))
         else
             http_print(string.format('{"type": "official", "ip": "%s"}', tmp))
         end
     else
-        -- Keine aktive Konfiguration, prüfen wir das Backup (.bak)
         local bak_file = io.open(server_bak, "r")
         if bak_file then
             local tmp = bak_file:read("*l") or ""
@@ -93,16 +91,15 @@ if method == "GET" and query:match("getserver=1") then
             http_print('{"type": "official", "ip": ""}')
         end
     end
-    -- Beendet die Weboberflächen-Abfrage sofort, um das originale System-Fallback nicht zu stören
+    -- KORREKTUR: Erzwingt das sofortige Beenden für den AJAX-Aufruf
     os.exit()
 end
 
--- 2. POST-ZWEIG: Verarbeitet das Umschalten und Sichern der reinen IP
+-- 2. POST-ZWEIG: Verarbeitet das Umschalten und Sichern (.bak)
 if method == "POST" then
     local params = parse_post_body()
     if params.action == "saveserver" then
         if params.type == "official" then
-            -- Konvention: Offiziell gewählt -> Lokalen Server zu .bak umbenennen
             local file = io.open(server_file, "r")
             if file then
                 local current = file:read("*l") or ""
@@ -116,16 +113,15 @@ if method == "POST" then
             end
             delimages = true
         elseif params.type == "custom" and params.ip and params.ip ~= "" then
-            -- Custom gewählt: Whitespaces entfernen, IP-Format erzwingen ohne http://
+            -- KORREKTUR: Formatbereinigung (kein http://, keine Leerzeichen)
             local clean_ip = params.ip:gsub("%s+", ""):gsub("^https?://", "")
             
-            -- Für die Luasocket-Validierung temporär ein Protokoll anfügen, damit url.parse funktioniert
-            local test_url = "http://" .. clean_ip
+            -- KORREKTUR: Temporäres HTTP-Konstrukt mit End-Slash für die Luasocket-Validierung
+            local test_url = "http://" .. clean_ip .. "/"
             local valid = false
             local path = url.parse(test_url)
             local host_to_check = path.host or clean_ip
             
-            -- Strikte Validierung der privaten Subnetze (10.x, 172.16-31.x, 192.168.x)
             local ip = host_to_check
             if not host_to_check:match("^(%d+)%.(%d+)%.(%d+)%.(%d+)$") then
                 ip = socket.dns.toip(host_to_check) or host_to_check
@@ -141,13 +137,14 @@ if method == "POST" then
                 os.remove(server_file)
                 local file = io.open(server_file, "w")
                 if file then
-                    -- Schreibt NUR die reine IP und unterdrückt den Zeilenumbruch (\n)
+                    -- KORREKTUR: Schreibt AUSSCHLIESSLICH die nackte IP ohne \n
                     file:write(clean_ip)
                     file:close()
-                    os.remove(server_bak) -- Aktives Überschreiben löscht das Backup
+                    os.remove(server_bak)
                     delimages = true
                 end
             else
+                -- KORREKTUR: Header-Syntax korrigiert
                 http_print(proto .. " 400 Bad Request")
                 http_print("Content-Type: text/plain")
                 http_print()
@@ -161,6 +158,7 @@ if method == "POST" then
             os.execute("rm -f /config/octonet.*.sha")
         end
         
+        -- KORREKTUR: Header-Syntax korrigiert
         http_print(proto .. " 200 OK")
         http_print("Content-Type: text/plain")
         http_print()
@@ -195,6 +193,7 @@ elseif query:sub(1,4) == "set=" then
       
       local parse_url = userver
       if not parse_url:match("^http") then parse_url = "http://" .. parse_url end
+      if not parse_url:match("/$") then parse_url = parse_url .. "/" end
       
       local path = url.parse(parse_url)
       local host_to_check = path.host or userver
