@@ -1,5 +1,11 @@
 #!/bin/sh
 if [ "$IFACE" = "eth0" ]; then
-    /etc/init.d/S99octo restartoctoserve 2>/dev/null
+    # KORREKTUR: Der Aufruf wird durch ( ... ) & komplett in den Hintergrund verlagert
+    (
+        # Kurze Gedenksekunde, damit ifup vollständig abschließen kann
+        sleep 1
+        /etc/init.d/S99octo restartoctoserve
+    ) >/dev/null 2>&1 &
 fi
+exit 0
 

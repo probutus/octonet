@@ -1,0 +1,6 @@
+#!/bin/sh
+if [ -x /sbin/resolvconf ]; then
+    echo "Removing DNS for $IFACE via resolvconf"
+    /sbin/resolvconf -d "$IFACE" 2>/dev/null || true  
+fi
+
