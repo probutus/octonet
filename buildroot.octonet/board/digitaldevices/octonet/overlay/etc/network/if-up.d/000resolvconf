@@ -1,0 +1,15 @@
+#!/bin/sh
+# Prüfen, ob resolvconf installiert ist und ob DNS-Daten für das Interface existieren
+if [ -x /sbin/resolvconf ] && [ -n "$IF_DNS_NAMESERVERS" ]; then
+    echo "Configuring DNS for $IFACE via resolvconf"
+    
+    # Formatierung der Nameserver für resolvconf vorbereiten
+    NEW_DNS=""
+    for ns in $IF_DNS_NAMESERVERS; do
+        NEW_DNS="${NEW_DNS}nameserver ${ns}\n"
+    done
+    
+    # Daten an resolvconf senden
+    printf "$NEW_DNS" | /sbin/resolvconf -a "$IFACE"
+fi
+
