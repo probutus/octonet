@@ -1,0 +1,22 @@
+#!/bin/sh
+# Dieses Skript läuft immer, wenn ein Interface heruntergefahren wird
+
+if [ "$IFACE" = "eth0" ]; then
+    echo "if-down.d: Bereinige DHCP-Prozesse und Kernel-IPs für eth0..."
+    
+    # 1. Killt alle aktiven udhcpc-Instanzen für eth0 hart
+    if [ -f /var/run/udhcpc.eth0.pid ]; then
+        kill -9 $(cat /var/run/udhcpc.eth0.pid) 2>/dev/null
+        rm -f /var/run/udhcpc.eth0.pid
+    fi
+    killall -9 udhcpc 2>/dev/null
+    
+    # 2. Löscht die DHCP-IP (.168) restlos vom Interface, bevor es deaktiviert wird
+    ip addr flush dev eth0 2>/dev/null
+    
+    # 3. Löscht den internen ifupdown-Cache für eth0, falls sich die Modi beißen
+    sed -i '/eth0/d' /var/run/ifstate 2>/dev/null
+fi
+
+exit 0
+
