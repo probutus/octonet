@@ -151,7 +151,7 @@ elseif method == "POST" then
                 -- 3. Wir killen den dhcp-Client unbarmherzig mit -9 (SIGKILL)
                 -- 4. Wir löschen alle alten IP-Adressen und Standard-Routen aus dem Kernel
                 -- 5. Wir fahren das Interface über /sbin/ifup eth0 wieder sauber hoch.
-                local cmd_chain = "(sleep 2 && /sbin/ifdown eth0 && killall -9 udhcpc && iifconfig eth0 up && sleep 1 && /sbin/ifup eth0 > /dev/null 2>&1 && /etc/init.d/S42zcip start) > /dev/null 2>&1 &"
+                local cmd_chain = "(sleep 2 && /sbin/ifdown eth0 && killall -9 udhcpc && ifconfig eth0 up && sleep 1 && /sbin/ifup eth0 > /dev/null 2>&1 && /etc/init.d/S42zcip start) > /dev/null 2>&1 &"
                 if params.mode == "dhcp" then
                     -- Wenn wir ZU DHCP wechseln, reicht die Standard-Kette
                     cmd_chain = "(sleep 2 && /sbin/ifdown eth0 && /sbin/ifup eth0) > /dev/null 2>&1 &"
