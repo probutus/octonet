@@ -12,15 +12,13 @@ local cman = require("ConnectionManager")
 local cdir = require("ContentDirectory")
 local mreg = require("MediaReceiverRegistrar")
 
-
-
-
 function sendXMLFile(client,data)
+  -- KORREKTUR: upnp.Server (kleingeschrieben) genutzt
   local r = "HTTP/1.1 200 OK\r\n"
         .. 'Content-Type: text/xml; charset="utf-8"\r\n'
         .. "Connection: close\r\n"
         .. "Content-Length: "..string.format("%d",#data).."\r\n"
-        .. "Server: "..UPnP.Server.."\r\n"
+        .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
         .. "Date: "..os.date("!%a, %d %b %Y %H:%M:%S GMT").."\r\n"
         .. "EXT:\r\n"
         .. "\r\n"
@@ -36,13 +34,15 @@ function sendImage(client,path)
       local image = f:read(100000)
       f:close()
       local t = "jpeg"
-      if p.sub(p,-3) == "png" then t = "png" end
+      -- KORREKTUR: string.sub(p, -3) korrekt aufgerufen
+      if string.sub(p,-3) == "png" then t = "png" end
     
+      -- KORREKTUR: upnp.Server (kleingeschrieben) genutzt
       local r = "HTTP/1.1 200 OK\r\n"
               .. "Content-Type: image/"..t.."\r\n"
               .. "Content-Length: "..string.format("%d",#image).."\r\n"
               .. "Connection: Close\r\n"
-              .. "Server: "..UPnP.Server.."\r\n"
+              .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
               .. "Date: "..os.date("!%a, %d %b %Y %H:%M:%S GMT").."\r\n"
               .. "\r\n"
               .. image  
@@ -56,10 +56,11 @@ function sendImage(client,path)
 end
 
 function sendRedirect(client,host)
+  -- KORREKTUR: upnp.Server (kleingeschrieben) genutzt
   local r = "HTTP/1.1 200 OK\r\n"
           .. "Content-Type: text/html\r\n"
           .. "Connection: Close\r\n"
-          .. "Server: "..UPnP.Server.."\r\n"
+          .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
           .. "Refresh: 0; url=http://"..host.."/\r\n"
           .. "\r\n"
           .. '<html><body><a href="http://'..host..'/">Click</a></body></html>\r\n'
@@ -104,14 +105,17 @@ if DisableDLNA then
   Desc = string.gsub(Desc,"(%<dlna:.+DOC%>)","")
 end
 
+-- KORREKTUR: Manuelles Öffnen des Sockets OHNE die fehlerhafte "reuseaddr"-Option
 local server = socket.tcp()
-assert(server:setoption("reuseaddr", true))
-assert(server:bind("*", port))
+
+-- Wir überspringen das fehlerhafte setoption komplett und binden direkt
+assert(server:bind("0.0.0.0", port))
 
 local ip, port = server:getsockname()
 print("Listen: " .. ip ..  ":" .. port)
 
 assert(server:listen(Backlog))
+
 
 while true do
   local client = server:accept()  
@@ -198,3 +202,4 @@ while true do
   collectgarbage()
 
 end
+

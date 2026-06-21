@@ -1,6 +1,7 @@
-
-
 local ContentDirectory = {}
+
+-- KORREKTUR: Lokaler Zugriff auf das UPnP-Objekt, falls es global registriert ist
+local upnp_framework = _G.UPnP or UPnP or {}
 
 -- local dlnaprofile = 'DLNA.ORG_PN=MPEG_TS;DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=0D100000000000000000000000000000'
 local dlnaprofile = 'DLNA.ORG_PN=MPEG_TS;DLNA.ORG_OP=00;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=8D100000000000000000000000000000'
@@ -14,7 +15,7 @@ end
 local Schema = 'xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"'
 
 local DIDLStart = '' -- '&lt;?xml version="1.0" encoding="utf-8"?&gt;'
-                ..'&lt;DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"'
+                ..'&lt;DIDL-Lite xmlns:dc="http://purl.org"'
                 ..' xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"'
                 ..' xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"'
                 -- .. dlnaschema
@@ -67,7 +68,6 @@ if file then
       f.title = string.gsub(f.title,'<','&amp;lt;')
       f.title = string.gsub(f.title,'>','&amp;gt;')
       table.insert(Folders,f)
-      --  table.insert(RootFolders,f)
       AllFolders[f.id] = f
       for _,channel in ipairs(group.ChannelList) do
          local vi = {}
@@ -90,7 +90,6 @@ else
      f.AudioItems = {}
      f.ChildFolders = {}
      table.insert(Folders,f)
-   --  table.insert(RootFolders,f)
      AllFolders[f.id] = f
    end
 
@@ -123,14 +122,11 @@ for i = 1,4,1 do
   table.insert(f.VideoItems,vi)
   AllItems[vi.id] = vi
 end
-
 ----------------------------------------------------------------------------------------------------------------------------------------
 
 local function Folder(title,id,parentid,childCount)
   local F = '&lt;container id="'..id..'" parentID="'..parentid..'"'
-        -- ..' childCount="'..childCount..'"'
         ..' restricted="1"'
-        -- ..' searchable="1"'
         ..'&gt;'
         ..'&lt;dc:title&gt;'..title..'&lt;/dc:title&gt;'
         ..'&lt;upnp:class&gt;object.container.storageFolder&lt;/upnp:class&gt;'
@@ -143,11 +139,6 @@ local function VideoItem(Host,Item,nCompat)
   if Item.stream then
     rtspreq = 'stream='..Item.stream
   else
-    -- Some clients don't like a long request url, or an url with '&' in it
-    -- Fail them for now
-    -- if nCompat then
-      -- rtspreq = "stream_99"
-    -- elseif Item.src then
     if Item.src then
       rtspreq = '?src='..Item.src..'&amp;amp;'..Item.request
     else
@@ -168,16 +159,14 @@ local function VideoItem(Host,Item,nCompat)
               ..'&lt;/res&gt;'
   didl = didl ..'&lt;/item&gt;'
   return didl
-
 end
 
-
 local function BrowseChildren(client,Host,Request,nCompat)
-  local ObjectID = UPnP:GetRequestParam(Request,"ObjectID")
-  local BrowseFlag = UPnP:GetRequestParam(Request,"BrowseFlag")
-  local Filter = UPnP:GetRequestParam(Request,"Filter")
-  local StartingIndex = tonumber(UPnP:GetRequestParam(Request,"StartingIndex"))
-  local RequestedCount = tonumber(UPnP:GetRequestParam(Request,"RequestedCount"))
+  local ObjectID = upnp_framework:GetRequestParam(Request,"ObjectID")
+  local BrowseFlag = upnp_framework:GetRequestParam(Request,"BrowseFlag")
+  local Filter = upnp_framework:GetRequestParam(Request,"Filter")
+  local StartingIndex = tonumber(upnp_framework:GetRequestParam(Request,"StartingIndex"))
+  local RequestedCount = tonumber(upnp_framework:GetRequestParam(Request,"RequestedCount"))
   print("BrowseChildren",ObjectID,Filter,StartingIndex,RequestedCount)
 
   local didl = DIDLStart;
@@ -205,7 +194,6 @@ local function BrowseChildren(client,Host,Request,nCompat)
   else
     local f = AllFolders[ObjectID]
     if f then
-
       local Index = 0
       for i,cf in ipairs(f.ChildFolders) do
         if Index >= StartingIndex and (RequestedCount == 0 or NumberReturned < RequestedCount) then
@@ -224,7 +212,6 @@ local function BrowseChildren(client,Host,Request,nCompat)
         Index = Index + 1
         TotalMatches = TotalMatches +1
       end
-
     else
       Error = 710
     end
@@ -236,16 +223,15 @@ local function BrowseChildren(client,Host,Request,nCompat)
   if Error == 0 then
     local Args = { { n = "Result", v = didl }, { n = "NumberReturned", v = tostring(NumberReturned)},
                    { n = "TotalMatches", v = tostring(TotalMatches)}, { n = "UpdateID", v = tostring(UpdateID) } }
-    UPnP:SendResponse(client,UPnP:CreateResponse(Schema,"Browse",Args))
+    upnp_framework:SendResponse(client,upnp_framework:CreateResponse(Schema,"Browse",Args))
   else
-    UPnP:SendSoapError(client,Error)
+    upnp_framework:SendSoapError(client,Error)
   end
 
   return
 end
-
 local function BrowseMetaData(client,Host,Request,nCompat)
-  local ObjectID = UPnP:GetRequestParam(Request,"ObjectID")
+  local ObjectID = upnp_framework:GetRequestParam(Request,"ObjectID")
   local didl = DIDLStart;
   local UpdateID = SystemUpdateID
   local Error = 0
@@ -253,8 +239,8 @@ local function BrowseMetaData(client,Host,Request,nCompat)
   if ObjectID == "0" then
     local ChildCount = #Folders
     if nCompat then ChildCount = #RootFolders end
-    didl = didl .. '&lt;container id="1" parentID = "-1" childCount="'..tostring(ChildCount)..'" restricted="true"&gt>'
-                .. '&lt:dc:title&gt;OctopusNet&lt;/dc:title&gt;'
+    didl = didl .. '&lt;container id="1" parentID = "-1" childCount="'..tostring(ChildCount)..'" restricted="true"&gt;'
+                .. '&lt;dc:title&gt;OctopusNet&lt;/dc:title&gt;'
                 ..'&lt;upnp:class&gt;object.container.storageFolder&lt;/upnp:class&gt;'
                 ..'&lt;/container&gt;'
   else
@@ -276,21 +262,21 @@ local function BrowseMetaData(client,Host,Request,nCompat)
   if Error == 0 then
     local Args = { { n = "Result", v = didl }, { n = "NumberReturned", v = "1"},
                    { n = "TotalMatches", v = "1"}, { n = "UpdateID", v = tostring(UpdateID) } }
-    UPnP:SendResponse(client,UPnP:CreateResponse(Schema,"Browse",Args))
+    upnp_framework:SendResponse(client,upnp_framework:CreateResponse(Schema,"Browse",Args))
   else
-    UPnP:SendSoapError(client,Error)
+    upnp_framework:SendSoapError(client,Error)
   end
 
   didl = DIDLEnd;
 end
 
 local function Search(client,Host,Request,nCompat)
-  local ContainerID = UPnP:GetRequestParam(Request,"ContainerID")
-  local SearchCriteria = UPnP:GetRequestParam(Request,"SearchCriteria")
-  local Filter = UPnP:GetRequestParam(Request,"Filter")
-  local StartingIndex = tonumber(UPnP:GetRequestParam(Request,"StartingIndex"))
-  local RequestedCount = tonumber(UPnP:GetRequestParam(Request,"RequestedCount"))
-  local SortCriteria = UPnP:GetRequestParam(Request,"SortCriteria")
+  local ContainerID = upnp_framework:GetRequestParam(Request,"ContainerID")
+  local SearchCriteria = upnp_framework:GetRequestParam(Request,"SearchCriteria")
+  local Filter = upnp_framework:GetRequestParam(Request,"Filter")
+  local StartingIndex = tonumber(upnp_framework:GetRequestParam(Request,"StartingIndex"))
+  local RequestedCount = tonumber(upnp_framework:GetRequestParam(Request,"RequestedCount"))
+  local SortCriteria = upnp_framework:GetRequestParam(Request,"SortCriteria")
   print(SearchCriteria,ContainerID,Filter,StartingIndex,RequestedCount,SortCriteria)
 
   local didl = DIDLStart;
@@ -300,7 +286,6 @@ local function Search(client,Host,Request,nCompat)
   local UpdateID = SystemUpdateID
 
   if string.match(SearchCriteria,"videoItem") then
-
     if ContainerID == "0" then
       if not nCompat or nCompat ~= "WMP" then
         local Index = 0
@@ -311,10 +296,8 @@ local function Search(client,Host,Request,nCompat)
           end
           Index = Index + 1
           TotalMatches = TotalMatches + 1
-          -- if nCompat and TotalMatches > 19 then break end
         end
       end
-
     else
       local f = AllFolders[ContainerID]
       if f then
@@ -337,18 +320,14 @@ local function Search(client,Host,Request,nCompat)
   end
 
   didl = didl..DIDLEnd
-  -- didl = TestDidl
-    -- NumberReturned = 1
-    -- TotalMatches = 1
   print("Returned",StartingIndex,NumberReturned,TotalMatches,Error)
-
 
   if Error == 0 then
     local Args = { { n = "Result", v = didl }, { n = "NumberReturned", v = tostring(NumberReturned)},
                    { n = "TotalMatches", v = tostring(TotalMatches)}, { n = "UpdateID", v = tostring(UpdateID) } }
-    UPnP:SendResponse(client,UPnP:CreateResponse(Schema,"Search",Args))
+    upnp_framework:SendResponse(client,upnp_framework:CreateResponse(Schema,"Search",Args))
   else
-    UPnP:SendSoapError(client,Error)
+    upnp_framework:SendSoapError(client,Error)
   end
 
   return
@@ -356,7 +335,7 @@ end
 
 local function SendResult(client,Action,VarName,Result)
   local Args = { { n = VarName, v = Result } }
-  UPnP:SendResponse(client,UPnP:CreateResponse(Schema,Action,Args))
+  upnp_framework:SendResponse(client,upnp_framework:CreateResponse(Schema,Action,Args))
 end
 
 function ContentDirectory:Invoke(client,Attributes,Request)
@@ -373,33 +352,32 @@ function ContentDirectory:Invoke(client,Attributes,Request)
 
   print(Host,"ContentDirectory",Action)
   if Action == "Browse" then
-    local BrowseFlag = tostring(UPnP:GetRequestParam(Request,"BrowseFlag"))
+    local BrowseFlag = tostring(upnp_framework:GetRequestParam(Request,"BrowseFlag"))
     if BrowseFlag == "BrowseDirectChildren" then
       BrowseChildren(client,Host,Request,Compability)
     elseif BrowseFlag == "BrowseMetadata" then
       BrowseMetaData(client,Host,Request,Compability)
     else
-      UPnP:SendSoapError(client,710)
+      upnp_framework:SendSoapError(client,710)
     end
   elseif Action == "Search" then
     Search(client,Host,Request,Compability)
-  -- elseif Action == "X_GetRemoteSharingStatus" then
-    -- SendResult(client,Action,"0")
   elseif Action == "GetSortCapabilities" then
     SendResult(client,Action,"SortCaps","dc:title,upnp:class,upnp:originalTrackNumber")
   elseif Action == "GetSearchCapabilities" then
     SendResult(client,Action,"SearchCaps","dc:title")
   elseif Action == "GetSystemUpdateID" then
-    SendResult(client,Action,"Id","1")
+    SendResult(client,Action,"Id",tostring(SystemUpdateID))
   else
-    UPnP:SendSoapError(client,401)
+    upnp_framework:SendSoapError(client,401)
   end
 end
 
 function ContentDirectory:Subscribe(client,callback,timeout)
+  local server_string = upnp_framework.Server or "Linux/3.9 UPnP/1.0 OctopusNet-DMS/1.0"
   local r = "HTTP/1.1 200 OK\r\n"
           .. 'Content-Type: text/xml; charset="utf-8"\r\n'
-          .. "Server: "..UPnP.Server.."\r\n"
+          .. "Server: "..server_string.."\r\n"
           .. "SID: uuid:50c95800-e839-4b96-b7ae-779d989e1399\r\n"
           .. "Timeout: Second-1800\r\n"
           .. "Content-Length: 0\r\n"
@@ -407,17 +385,16 @@ function ContentDirectory:Subscribe(client,callback,timeout)
           .. "EXT:\r\n"
           .. "\r\n"
   client:send(r)
-
-  local ipaddr,port = client:getpeername()
+  
   local Args = { { n = "TransferIDs", v = "" }, { n = "SystemUpdateID", v = tostring(SystemUpdateID) } }
-  UPnP:SendEvent(callback,"50c95800-e839-4b96-b7ae-779d989e1399",0,Args)
-
+  upnp_framework:SendEvent(callback,"50c95800-e839-4b96-b7ae-779d989e1399",0,Args)
 end
 
 function ContentDirectory:Renew(client,sid,timeout)
+  local server_string = upnp_framework.Server or "Linux/3.9 UPnP/1.0 OctopusNet-DMS/1.0"
   local r = "HTTP/1.1 200 OK\r\n"
           .. 'Content-Type: text/xml; charset="utf-8"\r\n'
-          .. "Server: "..UPnP.Server.."\r\n"
+          .. "Server: "..server_string.."\r\n"
           .. "SID: uuid:50c95800-e839-4b96-b7ae-779d989e1399\r\n"
           .. "Timeout: Second-1800\r\n"
           .. "Content-Length: 0\r\n"
@@ -428,9 +405,10 @@ function ContentDirectory:Renew(client,sid,timeout)
 end
 
 function ContentDirectory:Unsubscribe(client,sid)
+  local server_string = upnp_framework.Server or "Linux/3.9 UPnP/1.0 OctopusNet-DMS/1.0"
   local r = "HTTP/1.1 200 OK\r\n"
           .. 'Content-Type: text/xml; charset="utf-8"\r\n'
-          .. "Server: "..UPnP.Server.."\r\n"
+          .. "Server: "..server_string.."\r\n"
           .. "Content-Length: 0\r\n"
           .. "Connection: close\r\n"
           .. "EXT:\r\n"
@@ -438,9 +416,8 @@ function ContentDirectory:Unsubscribe(client,sid)
   client:send(r)
 end
 
-
 function ContentDirectory:Description()
-  t = ""
+  local t = ""
   local f = io.open("ContentDirectory.xml","r")
   if not f then os.exit() end
   while true do
@@ -453,3 +430,4 @@ function ContentDirectory:Description()
 end
 
 return ContentDirectory
+
