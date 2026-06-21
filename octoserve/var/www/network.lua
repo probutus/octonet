@@ -39,10 +39,14 @@ local function get_post_params()
     local params = {}
     local content_length = tonumber(os.getenv("CONTENT_LENGTH")) or 0
     if content_length > 0 then
-        local body = io.read(content_length)
-        for k, v in string.gmatch(body, "([^&=]+)=([^&=]+)") do
-            v = string.gsub(v, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
-            params[k] = v
+        local body = io.read(content_length) or ""
+        for pair in string.gmatch(body, "[^&]+") do
+            local k, v = string.match(pair, "([^=]+)=(.*)")
+            if k and v then
+                v = string.gsub(v, "+", " ")
+                v = string.gsub(v, "%%(%x%x)", function(h) return string.char(tonumber(h, 16)) end)
+                params[k] = v
+            end
         end
     end
     return params
@@ -51,15 +55,20 @@ end
 local method = os.getenv("REQUEST_METHOD") or "GET"
 local query = os.getenv("QUERY_STRING") or ""
 
+-- Helper zur standardkonformen HTTP-Ausgabe für den embedded Webserver
+local function http_print(status, content_type, body)
+    io.stdout:write("Status: " .. status .. "\r\n")
+    io.stdout:write("Content-Type: " .. content_type .. "\r\n")
+    io.stdout:write("\r\n") -- Die zwingend erforderliche CGI-Leerzeile
+    if body then io.stdout:write(body) end
+end
+
 -- ====================================================================
 -- GET ACTION: Liest /etc/network/interfaces aus und gibt JSON zurueck
 -- ====================================================================
 if method == "GET" and query:match("action=get") then
-    print("Status: 200 OK")
-    print("Content-Type: application/json\n")
-    
     if is_nfs_boot() then
-        print('{"mode": "nfs", "ip": "NFS-Active", "netmask": "", "gateway": "", "dns": ""}')
+        http_print("200 OK", "application/json; charset=UTF-8", '{"mode": "nfs", "ip": "NFS-Active", "netmask": "", "gateway": "", "dns": ""}')
         return
     end
     
@@ -80,8 +89,9 @@ if method == "GET" and query:match("action=get") then
         end
     end
     
-    print(string.format('{"mode": "%s", "ip": "%s", "netmask": "%s", "gateway": "%s", "dns": "%s"}', 
-        mode, ip, netmask, gateway, dns))
+    local json = string.format('{"mode": "%s", "ip": "%s", "netmask": "%s", "gateway": "%s", "dns": "%s"}', 
+        mode, ip, netmask, gateway, dns)
+    http_print("200 OK", "application/json; charset=UTF-8", json)
     return
 
 -- ====================================================================
@@ -92,9 +102,7 @@ elseif method == "POST" then
     
     if params.action == "save" then
         if is_nfs_boot() then
-            print("Status: 423 Locked")
-            print("Content-Type: text/plain\n")
-            print("Fehler: Netzwerk-Konfiguration im NFS-Modus gesperrt.")
+            http_print("423 Locked", "text/plain; charset=UTF-8", "Fehler: Netzwerk-Konfiguration im NFS-Modus gesperrt.")
             return
         end
 
@@ -106,7 +114,6 @@ elseif method == "POST" then
         out_content = out_content .. "auto eth0\n"
         
         if params.mode == "dhcp" then
-            -- Zurück zur absolut standardkonformen, schlanken Syntax für das OS
             out_content = out_content .. "iface eth0 inet dhcp\n"
             allowed = true
         elseif params.mode == "static" and params.ip and params.netmask and params.gateway then
@@ -139,36 +146,26 @@ elseif method == "POST" then
                     end
                 end
                 
-                print("Status: 200 OK")
-                print("Content-Type: text/plain\n")
-                print("OK")
+                -- KORREKTUR: Saubere HTTP-Rückmeldung an den Browser absenden, BEVOR das Netzwerk getrennt wird
+                http_print("200 OK", "text/plain; charset=UTF-8", "OK")
                 
                 -- ====================================================================
-                -- DIE ABSOLUT UNFEHLBARE ABSCHALTE-KETTE (Direkt im OS-Hintergrund):
+                -- DIE ABSOLUT UNFEHLBARE ABSCHALTE-KETTE (Hintergrund-Fix):
                 -- ====================================================================
-                -- 1. Wir warten 2 Sek, bis HTTP geantwortet hat.
-                -- 2. Wir führen standardmäßig /sbin/ifdown eth0 aus.
-                -- 3. Wir killen den dhcp-Client unbarmherzig mit -9 (SIGKILL)
-                -- 4. Wir löschen alle alten IP-Adressen und Standard-Routen aus dem Kernel
-                -- 5. Wir fahren das Interface über /sbin/ifup eth0 wieder sauber hoch.
-                local cmd_chain = "(sleep 2 && /sbin/ifdown eth0 && killall -9 udhcpc && ifconfig eth0 up && sleep 1 && /sbin/ifup eth0 > /dev/null 2>&1 && /etc/init.d/S42zcip start) > /dev/null 2>&1 &"
+                -- KORREKTUR: Tippfehler 'iifconfig' behoben zu 'ifconfig' und 'ip addr flush' integriert
+                local cmd_chain = "(sleep 2; /sbin/ifdown eth0; ip addr flush dev eth0; /sbin/ifconfig eth0 up; sleep 2; sed -i '/eth0/d' /var/run/ifstate; /sbin/ifup eth0) > /dev/null 2>&1 &"
                 if params.mode == "dhcp" then
-                    -- Wenn wir ZU DHCP wechseln, reicht die Standard-Kette
-                    cmd_chain = "(sleep 2 && /sbin/ifdown eth0 && /sbin/ifup eth0) > /dev/null 2>&1 &"
+                    cmd_chain = "(sleep 2; /sbin/ifdown eth0; ip addr flush dev eth0; /sbin/ifconfig eth0 up; sleep 2; sed -i '/eth0/d' /var/run/ifstate; /sbin/ifup eth0) > /dev/null 2>&1 &"
                 end 
                 os.execute(cmd_chain)
                 return
             else
-                print("Status: 500 Internal Server Error")
-                print("Content-Type: text/plain\n")
-                print("Fehler beim Schreiben der interfaces: " .. tostring(err))
+                http_print("500 Internal Server Error", "text/plain; charset=UTF-8", "Fehler beim Schreiben der interfaces: " .. tostring(err))
                 return
             end
         end
     end
 end
 
-print("Status: 400 Bad Request")
-print("Content-Type: text/plain\n")
-print("Ungueltige Anfrage oder Validierungsfehler.")
+http_print("400 Bad Request", "text/plain; charset=UTF-8", "Ungueltige Anfrage oder Validierungsfehler.")
 
