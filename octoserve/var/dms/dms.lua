@@ -12,12 +12,15 @@ local cman = require("ConnectionManager")
 local cdir = require("ContentDirectory")
 local mreg = require("MediaReceiverRegistrar")
 
+
+
+
 function sendXMLFile(client,data)
   local r = "HTTP/1.1 200 OK\r\n"
         .. 'Content-Type: text/xml; charset="utf-8"\r\n'
         .. "Connection: close\r\n"
         .. "Content-Length: "..string.format("%d",#data).."\r\n"
-        .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
+        .. "Server: "..UPnP.Server.."\r\n"
         .. "Date: "..os.date("!%a, %d %b %Y %H:%M:%S GMT").."\r\n"
         .. "EXT:\r\n"
         .. "\r\n"
@@ -33,13 +36,13 @@ function sendImage(client,path)
       local image = f:read(100000)
       f:close()
       local t = "jpeg"
-      if string.sub(p,-3) == "png" then t = "png" end
+      if p.sub(p,-3) == "png" then t = "png" end
     
       local r = "HTTP/1.1 200 OK\r\n"
               .. "Content-Type: image/"..t.."\r\n"
               .. "Content-Length: "..string.format("%d",#image).."\r\n"
               .. "Connection: Close\r\n"
-              .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
+              .. "Server: "..UPnP.Server.."\r\n"
               .. "Date: "..os.date("!%a, %d %b %Y %H:%M:%S GMT").."\r\n"
               .. "\r\n"
               .. image  
@@ -53,13 +56,8 @@ function sendImage(client,path)
 end
 
 function sendRedirect(client,host)
-  local r = "HTTP/1.1 200 OK\r\n"
-          .. "Content-Type: text/html\r\n"
-          .. "Connection: Close\r\n"
-          .. "Server: "..(upnp.Server or "OctopusNET DMS").."\r\n"
-          .. "Refresh: 0; url=http://"..host.."/\r\n"
-          .. "\r\n"
-          .. '<html><body><a href="http://'..host..'/">Click</a></body></html>\r\n'
+  local r = "HTTP/1.1 303 See Other\r\n"
+          .. "Location: http://"..host.."/\r\n"
   client:send(r)
 end
 
@@ -75,6 +73,11 @@ function LoadFile(fname)
   end
   f:close()
   return t
+end
+
+function GetEnabled()
+  local f=io.open("/config/nodms.enabled", "r")
+  if f~=nil then io.close(f) return false else return true end
 end
 
 function GetBoxName()
@@ -93,6 +96,7 @@ local port = 8080
 
 local uuid,sernbr,myip = upnp:SystemParameters("f0287290-e1e1-11e2-9a21-000000000000")
 local friendlyname = GetBoxName().." DMS"
+local enabled = GetEnabled()
 
 local Desc = LoadFile("dms.xml")
 Desc = string.gsub(Desc,"##(%a+)##",{ UUID = uuid, SERNBR = sernbr, HOST = myip, FRIENDLYNAME = friendlyname })
@@ -101,9 +105,8 @@ if DisableDLNA then
   Desc = string.gsub(Desc,"(%<dlna:.+DOC%>)","")
 end
 
--- KORREKTUR: Manuelles Oeffnen des Sockets ohne die fehlerhafte reuseaddr-Option
 local server = socket.tcp()
-assert(server:bind("0.0.0.0", port))
+assert(server:bind("*", port))
 
 local ip, port = server:getsockname()
 print("Listen: " .. ip ..  ":" .. port)
@@ -115,7 +118,9 @@ while true do
   client:settimeout(ClientTimeout)
   
   local method,path,proto,attributes = upnp:ReadHTTPHeader(client)
-  if method then 
+  if enabled == false then
+    sendRedirect(client,attributes["host"])
+  elseif method then
     if method == "GET" then
       if path == "/dms.xml" then
         sendXMLFile(client,Desc)
@@ -125,11 +130,11 @@ while true do
         sendXMLFile(client,cdir:Description())
       elseif path == "/mreg.xml" then
         sendXMLFile(client,mreg:Description())
-      elseif path == "/" then
-        sendRedirect(client,attributes["host"])
-      else
+      elseif path:sub(1, #"/icons/") == "/icons" then
         sendImage(client,path)
-      end      
+      else
+        sendRedirect(client,attributes["host"])
+      end
     elseif method == "SUBSCRIBE" then
       if attributes["NT"] then
         if attributes["NT"] == "upnp:event" and attributes["CALLBACK"] ~= "" then
@@ -195,4 +200,3 @@ while true do
   collectgarbage()
 
 end
-

@@ -1,9 +1,5 @@
-#!/usr/bin/lua
 
 UPnP = {}
-
-local socket = require("socket")
-local mime = require("mime") -- KORREKTUR: Fest importiert für die Event-Kodierung!
 
 local DebugFlag = false
 local Server = "Linux/3.9 DLNADOC/1.50 UPnP/1.0 OctopusNet-DMS/1.0"
@@ -40,7 +36,9 @@ function UPnP:ParseHTTPHeader(header)
   return method,path,proto,attributes
 end
 
+
 function UPnP:ReadHTTPHeader(client)
+
   local linenum = 0
   local line, err = client:receive()
   
@@ -72,8 +70,10 @@ function UPnP:ReadHTTPHeader(client)
     if n and v then
       attributes[string.upper(n)] = v
     end
+    
   end
   
+  -- Add some preparsed params, Note lower case key
   if attributes["HOST"] then
     local Host,Port = string.match(attributes["HOST"],"(.+)%:(%d+)")
     attributes["host"] = Host
@@ -82,15 +82,35 @@ function UPnP:ReadHTTPHeader(client)
 
   return method,path,proto,attributes
 end
+
 function UPnP:ReadHTTPBody(client,clen)
   local Body = ""
+  local linenum = 0
+  
   if DebugFlag and clen then print(string.format("---- Length = %d",clen)) end
 
   Body, err = client:receive(clen)
+  
   if err then 
     if DebugFlag then print("HTTPBody Error "..err) end
     return 
   end  
+  -- while true do
+    -- local line, err = client:receive()
+    -- if err then 
+      -- if DebugFlag then print("Error "..err) end
+      -- return 
+    -- end
+    -- linenum = linenum + 1
+    -- if DebugFlag then print(string.format("%4d:%s",linenum,line)) end
+    -- if line == "" then break end
+    
+    -- if linenum == 300 then
+      -- if DebugFlag then print("Error "..linenum) end
+      -- return 
+    -- end
+    -- Body = Body .. line .. "\n"
+  -- end
   return Body
 end
 
@@ -98,9 +118,9 @@ function UPnP:ParseInvocation(soap,Service)
 end
 
 function UPnP:CreateResponse(Service,Action,Args)
+  local n,v
   local soap = '<?xml version="1.0" encoding="utf-8"?>'..'\r\n'
-            -- KORREKTUR: Bereinigter XML-Namensraum-String für reibungsloses SOAP-Parsing der Clients
-            .. "<s:Envelope xmlns:s=\"http://xmlsoap.org\" s:encodingStyle=\"http://xmlsoap.org\">"
+            .. "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">"
             .. "<s:Body><u:"..Action.."Response "..Service..">"
   for _,a in ipairs(Args) do
     soap = soap .. "<"..a.n..">"..a.v.."</"..a.n..">"
@@ -119,26 +139,28 @@ function UPnP:SendResponse(client,Content)
           .. "EXT:\r\n"
           .. "\r\n"
           .. Content  
+
   client:send(r)  
 end
 
 function UPnP:GetRequestParam(Request,Param)
   return string.match(Request,"%<"..Param..".*%>%s*(.+)%s*%<%/"..Param.."%>")
 end
+
 local SoapErrorDescription = {}
 SoapErrorDescription[402] = "Invalid Args"
 
 function UPnP:SendSoapError(client,code)
   local soap = '<?xml version="1.0" encoding="utf-8"?>'
-            .. "<s:Envelope xmlns:s=\"http://xmlsoap.org\" s:encodingStyle=\"http://xmlsoap.org\">"
+            .. "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">"
             .. "<s:Body>"
             .. "<s:Fault>"
             .. "<s:faultcode>s:Client</s:faultcode>"
             .. "<s:faultstring>UPnPError</s:faultstring>"
             .. "<s:detail>"
-            .. '<UPnPError xmlns="urn:schemas-upnp-org:control-1-0">'
+            .. '<UPnPError xmlns="urn:shemas-upnp-org:control-1-0">'
             .. '<errorCode>'..code..'</errorCode>'
-            .. '<errorDescription>'..tostring(SoapErrorDescription[code] or "Unknown Error")..'</errorDescription>'
+            .. '<errorDescription>'..tostring(SoapErrorDescription[code])..'</errorDescription>'
             .. '</UPnPError>'
             .. "</s:detail>"
             .. "</s:fault>"
@@ -154,6 +176,7 @@ function UPnP:SendSoapError(client,code)
           .. "EXT:\r\n"
           .. "\r\n"
           .. soap  
+
   client:send(r)  
 end
 
@@ -175,7 +198,6 @@ function UPnP:SendEvent(path,uuid,seq,values)
   end
   if xml == "" then xml="nil" end
   
-  -- Hier greift nun die in Teil 1 importierte mime-Bibliothek fehlerfrei
   local b64 = mime.b64(xml)
   os.execute('lua SendEvent.lua "'..path..'" "'..uuid..'" "'..seq..'" "'..b64..'"&')
 end
@@ -186,22 +208,13 @@ function UPnP:SystemParameters(template)
   local eth0 = ifconfig:read("*a")
   ifconfig:close()
   
-  -- Akzeptiert flexibel sowohl Doppelpunkt als auch Leerzeichen nach "inet addr"
-  local myip = string.match(eth0,"inet addr%s*%:?%s*(%d+%.%d+%.%d+%.%d+)")
-  local hwaddr = string.match(eth0,"HWaddr%s+(%x+%:%x+%:%x+%:%x+%:%x+%:%x+)")
-  
-  if not hwaddr then
-    hwaddr = string.match(eth0,"ether%s+(%x+%:%x+%:%x+%:%x+%:%x+%:%x+)")
-  end
-  
-  local guidend = string.gsub(hwaddr or "00:00:00:00:00:00","%:","")
-  local sernbr = tonumber(string.sub(guidend,-6),16) or 0
+  local myip = string.match(eth0,"inet addr%:(%d+%.%d+%.%d+%.%d+)")
+  local hwaddr = string.match(eth0,"HWaddr (%x+%:%x+%:%x+%:%x+%:%x+%:%x+)")
+  local guidend = string.gsub(hwaddr,"%:","")
+  local sernbr = tonumber(string.sub(guidend,-6),16)
   local uuid = string.lower(string.gsub(template,"000000000000",guidend))
   
   return uuid,sernbr,myip
 end
 
--- Gewährleistet globale Sichtbarkeit für dms.lua und Submodule
-_G.UPnP = UPnP
 return UPnP
-
