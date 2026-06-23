@@ -1,231 +1,317 @@
 <!DOCTYPE HTML>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OctopusNet - Unicable Settings</title>
-  <link rel="stylesheet" type="text/css" href="/style.css">
-  <script type="text/javascript" src="/menu.js"></script>
-  <!-- Included scripts -->
-  <script type="text/javascript" src="/scifdb.lua"></script>
-  <script type="text/javascript" src="/scifsettings.lua"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OctopusNet - Unicable Settings</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script type="text/javascript" src="/menu.js"></script>
+<script type="text/javascript" src="/scifsettings.lua"></script>
 
-  <!-- Page scripts -->
-  <script type="text/javascript">
-  var xmlhttp = new XMLHttpRequest();
-  var url = "/octoserve/tunerstatus.json";
+<!-- Rein passives Laden des Caches direkt über lighttpd -->
+<script type="text/javascript" src="/scifdb_cache.js"></script>
 
-  xmlhttp.onreadystatechange = function() {
+<script type="text/javascript">
+var xmlhttp = new XMLHttpRequest();
+var url = "/octoserve/tunerstatus.json";
+xmlhttp.onreadystatechange = function() {
     if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-       myFunction(xmlhttp.responseText);
+        myFunction(xmlhttp.responseText);
     }
-  }
-
-  function myFunction(response) {
-     try {
-        var tl = JSON.parse(response);         
+}
+function myFunction(response) {
+    try {
+        var tl = JSON.parse(response);
         for (i = 0; i < tl.TunerList.length; i++) {
-          document.getElementById("trTuner" + i).style.display = "flex";  
+            document.getElementById("trTuner" + i).style.display = "flex";
         }
-     } catch(err) {}
-  }
+    } catch(err) {}
+}
 
-  var SCIFEnabled = false;
-  var SelectedManufacturer = 0;
-  var SelectedUnit = 0;
-  var TunerList = new Array();
+// FIX: Die krisensichere Selbtheilungs-Funktion ohne DOM-Abstürze
+function TriggerGenerator() {
+    if (window.GeneratorStarted) return;
+    window.GeneratorStarted = true;
 
-  function SetManufacturer(ManuIndex) {
+    // Wir warten ein paar Millisekunden, bis das HTML-Skelett im DOM bereitsteht,
+    // damit das Ausblenden der Menüs nicht ins Leere läuft!
+    setTimeout(function() {
+        var mainUI = document.getElementById("scif-main-ui");
+        if (mainUI) mainUI.style.display = "none";
+
+        var waitBox = document.getElementById("CacheWaitMessage");
+        if (waitBox) waitBox.style.display = "block";
+        
+        var ifrm = document.createElement("iframe");
+        ifrm.setAttribute("src", "/scifdb.lua?action=generate");
+        ifrm.setAttribute("style", "display:none; width:0; height:0; border:none;");
+        document.body.appendChild(ifrm);
+        
+        setTimeout(function() {
+            location.reload();
+        }, 2500);
+    }, 50);
+}
+
+var SCIFEnabled = false;
+var SelectedManufacturer = 0;
+var SelectedUnit = 0;
+var TunerList = new Array();
+
+function SetManufacturer(ManuIndex) {
     if (SCIFEnabled) document.getElementById("SetButton").disabled = false;
     SelectedManufacturer = ManuIndex;
     document.Unit.Select.length = 0;
-    for (var j = 0; j < ManufacturerList[ManuIndex].UnitList.length; j++) {
-      document.Unit.Select.options[j] = 
-        new Option(ManufacturerList[ManuIndex].UnitList[j].Name, j, false, true);
+    
+    if (ManufacturerList[ManuIndex].Name == "-- Benutzerdefiniert --") {
+        document.Unit.Select.options = new Option("Manuelle Konfiguration", 0, false, true);
+    } else {
+        for (var j = 0; j < ManufacturerList[ManuIndex].UnitList.length; j++) {
+            document.Unit.Select.options[j] = new Option(ManufacturerList[ManuIndex].UnitList[j].Name, j, false, true);
+        }
     }
-    SetUnit(ManufacturerList[ManuIndex].UnitList.length - 1);
-  }
-
-  function SetUnit(UnitIndex) {
+    SetUnit(document.Unit.Select.length - 1);
+}
+function SetUnit(UnitIndex) {
     if (SCIFEnabled) document.getElementById("SetButton").disabled = false;
     SelectedUnit = UnitIndex;
-
+    
+    var isCustom = (ManufacturerList[SelectedManufacturer].Name == "-- Benutzerdefiniert --");
+    
+    // Protokoll-Umschalter fuer Custom-Modus ein- oder ausblenden
+    var protoDiv = document.getElementById("CustomProtocolContainer");
+    if (protoDiv) protoDiv.style.display = isCustom ? "block" : "none";
+    
     for (var i = 0; i < TunerList.length; i++) {
-      TunerList[i].Select.length = 1;
-      var CurUnit = ManufacturerList[SelectedManufacturer].UnitList[UnitIndex];
-      for (var j = 0; j < CurUnit.Frequencies.length; j++) {
-        TunerList[i].Select.options[j + 1] = 
-          new Option('Slot ' + (j + 1) + ': ' + CurUnit.Frequencies[j] + 
-                     ' MHz', j + 1, false, true);
-      }
-      if (i < CurUnit.Frequencies.length) {
-        TunerList[i].Select.options[i + 1].selected = true;
-      } else {
-        TunerList[i].Select.options[0].selected = true;
-      }
-    }
-  }
-
-  function SetSlot(Tuner, SlotIndex) {
-    if (SCIFEnabled) document.getElementById("SetButton").disabled = false;
-  }
-
-  function SaveSettings() {
-    if (SCIFEnabled) {
-      var CurUnit = ManufacturerList[SelectedManufacturer].UnitList[SelectedUnit];
-      var Protocol = CurUnit.Protocol == "EN50607" ? '2' : '1';
-      var param = 'Manufacturer=' + SelectedManufacturer + '&Unit=' + 
-                  SelectedUnit + '&Type=' + Protocol;
-      for (var i = 0; i < TunerList.length; i++) {
-        param += '&Tuner' + (i + 1) + '=';
-        var SelectedFrequency = TunerList[i].Select.selectedIndex;
-        if (SelectedFrequency > 0) {
-          param += SelectedFrequency + ',' + 
-                   CurUnit.Frequencies[SelectedFrequency - 1];
+        var selectForm = document.getElementById("formTuner" + i);
+        var customForm = document.getElementById("customFormTuner" + i);
+        
+        if (isCustom) {
+            if (selectForm) selectForm.style.display = "none";
+            if (customForm) customForm.style.display = "flex";
         } else {
-          param += '0';
+            if (selectForm) selectForm.style.display = "block";
+            if (customForm) customForm.style.display = "none";
+            
+            TunerList[i].Select.length = 1;
+            var CurUnit = ManufacturerList[SelectedManufacturer].UnitList[UnitIndex];
+            
+            for (var j = 0; j < CurUnit.Frequencies.length; j++) {
+                TunerList[i].Select.options[j + 1] = 
+                    new Option('Slot ' + (j + 1) + ': ' + CurUnit.Frequencies[j] + ' MHz', j + 1, false, true);
+            }
+            if (i < CurUnit.Frequencies.length) {
+                TunerList[i].Select.options[i + 1].selected = true;
+            } else {
+                TunerList[i].Select.options.selected = true;
+            }
         }
-      }
-      location.replace('/scifsettings.lua?' + param);
-    } else {
-      location.replace('/scifsettings.lua?reset');
     }
-  }
+}
 
-  function SetEnable() {
+function SetSlot(Tuner, SlotIndex) {
+    if (SCIFEnabled) document.getElementById("SetButton").disabled = false;
+}
+
+function SaveSettings() {
+    if (SCIFEnabled) {
+        var CurUnit = ManufacturerList[SelectedManufacturer].UnitList[SelectedUnit];
+        var Protocol = CurUnit.Protocol == "EN50607" ? '2' : '1';
+        var isCustom = (ManufacturerList[SelectedManufacturer].Name == "-- Benutzerdefiniert --");
+        
+        if (isCustom) {
+            Protocol = document.getElementById("CustomProtocol").checked ? '2' : '1';
+        }
+
+        var param = 'Manufacturer=' + SelectedManufacturer + '&Unit=' + SelectedUnit + '&Type=' + Protocol;
+        
+        for (var i = 0; i < TunerList.length; i++) {
+            param += '&Tuner' + (i + 1) + '=';
+            
+            if (isCustom) {
+                // Manuelle Eingabewerte fuer Kaskaden (Slot-IDs 1-32 und freie MHz)
+                var manualSlot = parseInt(document.getElementById("custom_slot_" + i).value) || 0;
+                var manualFreq = parseInt(document.getElementById("custom_freq_" + i).value) || 0;
+                
+                if (manualSlot > 0 && manualFreq > 0) {
+                    param += manualSlot + ',' + manualFreq;
+                } else {
+                    param += '0';
+                }
+            } else {
+                // Klassischer Modus ueber die XML-Datenbank
+                var SelectedFrequency = TunerList[i].Select.selectedIndex;
+                if (SelectedFrequency > 0) {
+                    param += SelectedFrequency + ',' + CurUnit.Frequencies[SelectedFrequency - 1];
+                } else {
+                    param += '0';
+                }
+            }
+        }
+        location.replace('/scifsettings.lua?' + param);
+    } else {
+        location.replace('/scifsettings.lua?reset');
+    }
+}
+
+function SetEnable() {
     SCIFEnabled = document.getElementById("EnableButton").checked;
     document.getElementById("SetButton").disabled = false;
-  }
+}
+function OnLoad() {
+    // FIX 2: Die unfehlbare Initialisierung beim Laden ohne .length-Absturz!
+    if (typeof ManufacturerList === "undefined" || !ManufacturerList) {
+        console.log("Kritischer Fehler: SCIF-Cache fehlt oder ist nicht definiert! Starte Selbtheilung...");
+        TriggerGenerator();
+        return;
+    }
+    
+    // Zweite Sicherheitsstufe: Falls das Array da ist, aber 0 Einträge hat (Leere Datei)
+    if (ManufacturerList.length === 0) {
+        console.log("Kritischer Fehler: SCIF-Cache hat 0 Einträge! Starte Selbtheilung...");
+        TriggerGenerator();
+        return;
+    }
 
-  function OnLoad() {
+    // Ab hier läuft das Befüllen absolut krisensicher, da ManufacturerList garantiert intakt ist!
     SCIFEnabled = false;
     for (var i = 0; i < 12; i++) {
-      TunerList[i] = document.getElementById("formTuner" + i);
+        TunerList[i] = document.getElementById("formTuner" + i);
     }
-
     document.Manufacturer.Select.length = 0;
     for (var i = 0; i < ManufacturerList.length; i++) {
-      var ManuName = ManufacturerList[i].Name;
-      if (ManuName == '') ManuName = "-----------------";
-      document.Manufacturer.Select.options[i] = new Option(ManuName, i, false, true);
+        var ManuName = ManufacturerList[i].Name;
+        if (ManuName == '') ManuName = "-----------------";
+        document.Manufacturer.Select.options[i] = new Option(ManuName, i, false, true);
     }
-
     for (var i = 0; i < Tuner.length; i++) {
-      if (Tuner[i].Slot > 0) SCIFEnabled = true;
+        if (Tuner[i].Slot > 0) SCIFEnabled = true;
     }
-
     if (SCIFEnabled) {
-      document.Manufacturer.Select.selectedIndex = Manufacturer;
-      SetManufacturer(Manufacturer);
-      document.Unit.Select.selectedIndex = Unit;
-      SetUnit(Unit);
-      for (var i = 0; i < Tuner.length; i++) {
-        if (i < TunerList.length) {
-          TunerList[i].Select.selectedIndex = Tuner[i].Slot;
+        document.Manufacturer.Select.selectedIndex = Manufacturer;
+        SetManufacturer(Manufacturer);
+        document.Unit.Select.selectedIndex = Unit;
+        SetUnit(Unit);
+        
+        var isCustom = (ManufacturerList[Manufacturer].Name == "-- Benutzerdefiniert --");
+        for (var i = 0; i < Tuner.length; i++) {
+            if (i < TunerList.length) {
+                if (isCustom) {
+                    document.getElementById("custom_slot_" + i).value = Tuner[i].Slot;
+                    document.getElementById("custom_freq_" + i).value = Tuner[i].Freq;
+                } else {
+                    TunerList[i].Select.selectedIndex = Tuner[i].Slot;
+                }
+            }
         }
-      }
+        if (isCustom && typeof(Type) !== "undefined") {
+            document.getElementById("CustomProtocol").checked = (Type == 2 || Type == "2");
+        }
     } else {
-      document.Manufacturer.Select.selectedIndex = 
-        document.Manufacturer.Select.length - 1;
-      SetManufacturer(document.Manufacturer.Select.length - 1);
+        document.Manufacturer.Select.selectedIndex = document.Manufacturer.Select.length - 1;
+        SetManufacturer(document.Manufacturer.Select.length - 1);
     }
     document.getElementById("EnableButton").checked = SCIFEnabled;
     document.getElementById("SetButton").disabled = true;
-    
     xmlhttp.open("GET", url, true);
     xmlhttp.send();
-  }
-  </script>
+}
+</script>
 </head>
 <body onload="OnLoad()">
-  <div class="app-container">
-    
-    <header class="main-header">
-      <a href="http://digitaldevices.de" class="logo-link">
-        <img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
-      </a>
-    </header>
+<div class="app-container">
+<header class="main-header">
+<a href="http://digitaldevices.de" class="logo-link">
+<img src="/krake_octo.png" alt="Digital Devices Logo" class="logo-img" />
+</a>
+</header>
+<div class="content-wrapper">
+<nav class="side-navigation">
+<script type="text/javascript">CreateMenu();</script>
+</nav>
+<main class="main-content">
+<div class="headline-group">
+<h1>Unicable Einstellungen (SCR)</h1>
+<h2>Einkabellösung nach EN 50494 / EN 50607 konfigurieren</h2>
+</div>
 
-    <div class="content-wrapper">
-      <nav class="side-navigation">
-        <script type="text/javascript">CreateMenu();</script>
-      </nav>
+<!-- 1. DIE ZENTRIERTE "BITTE WARTEN" BOX (Standardmäßig unsichtbar) -->
+<div id="CacheWaitMessage" class="card" style="display:none; text-align: center; padding: 60px 20px; border: 1px solid #3b82f6; background: rgba(59, 130, 246, 0.05); margin-top: 20px;">
+    <div style="font-size: 50px; margin-bottom: 20px; animation: spin 2s linear infinite;">⚙️</div>
+    <h3 style="color: #fff; margin: 0 0 10px 0;">Bitte warten...</h3>
+    <p style="color: #8a99ad; margin: 0; font-size: 15px;">Die Tuner-Datenbank wird im Hintergrund neu aufgebaut. Die Seite lädt gleich automatisch neu.</p>
+</div>
 
-      <main class="main-content">
-        <div class="headline-group">
-          <h1>Unicable Einstellungen (SCR)</h1>
-          <h2>Einkabellösung nach EN 50494 / EN 50607 konfigurieren</h2>
-        </div>
-
-        <div class="dashboard-grid">
-          
-          <!-- Spalte 1: Haupteinstellungen -->
-          <section class="card">
-            <h3>System Aktivierung</h3>
-            <div class="form-grid">
-              <div class="form-group row-align">
-                <label for="EnableButton" class="font-bold">Unicable-Betrieb aktivieren</label>
-                <input id="EnableButton" type="checkbox" class="form-checkbox" onclick="SetEnable()">
-              </div>
-            </div>
-
-            <hr class="card-divider"/>
-
-            <h3>Hardware Profil</h3>
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Hersteller (Manufacturer)</label>
-                <form name="Manufacturer" action="" class="margin-none">
-                  <select name="Select" class="form-control" onchange="SetManufacturer(document.Manufacturer.Select.selectedIndex)">
-                    <option>----</option>
-                  </select>
-                </form>
-              </div>
-
-              <div class="form-group">
-                <label>Modell / Racksystem (Unit)</label>
-                <form name="Unit" action="" class="margin-none">
-                  <select name="Select" class="form-control" onchange="SetUnit(document.Unit.Select.selectedIndex)">
-                    <option>----</option>
-                  </select>
-                </form>
-              </div>
-            </div>
-
-            <div class="button-container margin-top-heavy">
-              <input type="button" class="btn btn-secondary" value="Cancel" onclick="location.replace('index.html')">
-              <input id="SetButton" type="button" class="btn btn-primary" value="Set Settings" onclick="SaveSettings()">
-            </div>
-          </section>
-
-          <!-- Spalte 2: Tuner Frequenz-Slots -->
-          <section class="card">
-            <h3>Tuner Slot-Zuweisung</h3>
-            <p class="update-subtext margin-bottom">
-              Weise den erkannten Tunern die entsprechenden Frequenz-Slots deines Einkabelsystems zu.
-            </p>
-            
-            <div class="form-grid layout-scif-tuners">
-              <script type="text/javascript">
-                for( var i = 0; i < 12 ; i++ )
-                {
-                  document.write('<div id="trTuner'+i+'" class="form-group row-align" style="display:none; border-bottom:1px solid var(--accent-color); padding-bottom:8px;">');
-                  document.write('<label class="font-bold">Tuner ' + (i+1) + '</label>');
-                  document.write('<form name="Tuner'+(i+1)+'" id="formTuner'+i+'" action="" class="margin-none">');
-                  document.write('<select name="Select" class="form-control width-auto" onchange="SetSlot(1,document.Tuner' +(i+1)+'.Select.selectedIndex)">');
-                  document.write('<option>----</option>');
-                  document.write('</select>');
-                  document.write('</form>');
-                  document.write('</div>');
-                }
-              </script>
-            </div>
-          </section>
-
-        </div>
-      </main>
-    </div>
-  </div>
+<!-- 2. DAS HAUPT-UI (Wird bei Korruption komplett versteckt, damit nichts "halbes" flackert) -->
+<div id="scif-main-ui" class="dashboard-grid">
+<!-- Spalte 1: Haupteinstellungen -->
+<section class="card">
+<h3>System Aktivierung</h3>
+<div class="form-grid">
+<div class="form-group row-align">
+<label for="EnableButton" class="font-bold">Unicable-Betrieb aktivieren</label>
+<input id="EnableButton" type="checkbox" class="form-checkbox" onclick="SetEnable()">
+</div>
+</div>
+<hr class="card-divider"/>
+<h3>Hardware Profil</h3>
+<div class="form-grid">
+<div class="form-group">
+<label>Hersteller (Manufacturer)</label>
+<form name="Manufacturer" action="" class="margin-none">
+<select name="Select" class="form-control" onchange="SetManufacturer(document.Manufacturer.Select.selectedIndex)">
+<option>----</option>
+</select>
+</form>
+</div>
+<div class="form-group">
+<label>Modell / Racksystem (Unit)</label>
+<form name="Unit" action="" class="margin-none">
+<select name="Select" class="form-control" onchange="SetUnit(document.Unit.Select.selectedIndex)">
+<option>----</option>
+</select>
+</form>
+</div>
+<div id="CustomProtocolContainer" class="form-group row-align" style="display:none; margin-top:15px; background: rgba(255,255,255,0.05); padding: 8px; border-radius:4px;">
+<label for="CustomProtocol" class="font-bold">Nutze JESS / Unicable II (EN 50607)</label>
+<input id="CustomProtocol" type="checkbox" class="form-checkbox" onclick="if(SCIFEnabled)document.getElementById('SetButton').disabled=false;">
+</div>
+</div>
+<div class="button-container margin-top-heavy">
+<input type="button" class="btn btn-secondary" value="Cancel" onclick="location.replace('index.html')">
+<input id="SetButton" type="button" class="btn btn-primary" value="Set Settings" onclick="SaveSettings()">
+</div>
+</section>
+<!-- Spalte 2: Tuner Frequenz-Slots -->
+<section class="card">
+<h3>Tuner Slot-Zuweisung</h3>
+<p class="update-subtext margin-bottom">Weise den erkannten Tunern die entsprechenden Frequenz-Slots deines Einkabelsystems zu.</p>
+<div class="form-grid layout-scif-tuners">
+<script type="text/javascript">
+for( var i = 0; i < 12 ; i++ )
+{
+    document.write('<div id="trTuner'+i+'" class="form-group row-align" style="display:none; border-bottom:1px solid var(--accent-color); padding-bottom:8px; align-items: center;">');
+    document.write('<label class="font-bold" style="min-width:70px;">Tuner ' + (i+1) + '</label>');
+    document.write('<form name="Tuner'+(i+1)+'" id="formTuner'+i+'" action="" class="margin-none" style="flex-grow:1;">');
+    document.write('<select name="Select" class="form-control width-auto" onchange="SetSlot(1,document.Tuner' +(i+1)+'.Select.selectedIndex)">');
+    document.write('<option>----</option>');
+    document.write('</select>');
+    document.write('<' + '/form>');
+    document.write('<div id="customFormTuner'+i+'" class="margin-none" style="display:none; gap:10px; flex-grow:1; align-items:center;">');
+    document.write('<span style="font-size:12px;">Slot:</span>');
+    document.write('<input type="number" id="custom_slot_'+i+'" class="form-control" style="width:60px; text-align:center;" min="1" max="32" value="'+(i+1)+'" placeholder="ID" oninput="if(SCIFEnabled)document.getElementById(\'SetButton\').disabled=false;">');
+    document.write('<span style="font-size:12px;">Freq:</span>');
+    document.write('<input type="number" id="custom_freq_'+i+'" class="form-control" style="width:90px;" min="0" placeholder="MHz" oninput="if(SCIFEnabled)document.getElementById(\'SetButton\').disabled=false;">');
+    document.write('</div>');
+    document.write('</div>');
+}
+</script>
+</div>
+</section>
+</div>
+</main>
+</div>
+</div>
 </body>
 </html>
 

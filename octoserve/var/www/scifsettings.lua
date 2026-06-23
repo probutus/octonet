@@ -1,164 +1,175 @@
 #!/usr/bin/lua
 
-function SaveOctoserveConf(Section,Values)
-  local ConfStart = ""
-  local ConfEnd = ""
-  local f = io.open("/config/octoserve.conf","r")
-  if f then
-    while true do
-      line = f:read()
-      if not line then break end
-      if string.match(line,"^%["..Section.."%]") then break end
-      ConfStart = ConfStart .. line .. "\n"
+-- =====================================================================
+-- GLOBALE SPEICHER- UND CACHE-INVALIDIERUNGS-ROUTINE
+-- =====================================================================
+
+function SaveOctoserveConf(Section, Values)
+    local ConfStart = ""
+    local ConfEnd = ""
+    local f = io.open("/config/octoserve.conf", "r")
+    
+    if f then
+        while true do
+            local line = f:read()
+            if not line then break end
+            if string.match(line, "^%[" .. Section .. "%]") then break end
+            ConfStart = ConfStart .. line .. "\n"
+        end
+        while true do
+            local line = f:read()
+            if not line then break end
+            if string.match(line, "^%[%w+%]") then
+                ConfEnd = ConfEnd .. line .. "\n"
+                break
+            end
+        end
+        while true do
+            local line = f:read()
+            if not line then break end
+            ConfEnd = ConfEnd .. line .. "\n"
+        end
+        f:close()
+        os.remove("/config/octoserve.bak")
+        os.rename("/config/octoserve.conf", "/config/octoserve.bak")
     end
-    while true do
-      line = f:read()
-      if not line then break end
-      if string.match(line,"^%[%w+%]") then
-        ConfEnd = ConfEnd .. line .. "\n"
-        break 
-      end
+    
+    f = io.open("/config/octoserve.conf", "w")
+    if ConfStart then
+        f:write(ConfStart)
     end
-    while true do
-      line = f:read()
-      if not line then break end
-      ConfEnd = ConfEnd .. line .. "\n"
+    f:write("[" .. Section .. "]\n")
+    f:write(Values)
+    if ConfEnd then
+        f:write(ConfEnd)
     end
     f:close()
-    os.remove("/config/octoserve.bak")
-    os.rename("/config/octoserve.conf","/config/octoserve.bak")
-  end
-    
-  f = io.open("/config/octoserve.conf","w")
-  if ConfStart then 
-    f:write(ConfStart)
-  end
-  f:write("["..Section.."]\n")
-  f:write(Values)
-  if ConfEnd then
-    f:write(ConfEnd)
-  end
-  f:close()
+
+    -- FIX: INVALIDIERE DEN SCIF-DATABASE-CACHE!
+    -- Wenn Einstellungen gespeichert werden, fegen wir den alten Cache aus dem RAM (/tmp),
+    -- damit die scifdb.lua beim naechsten Laden die neuen Werte sofort einliest.
+    os.remove("/tmp/scifdb_cache.js")
 end
 
 function LoadOctoserveConf(Section)
-  local f = io.open("/config/octoserve.conf","r")
-  local Values = {}
-  local line
-  if f then    
-    while true do
-      line = f:read()
-      if not line then break end
-      if string.match(line,"^%["..Section.."%]") then break end
+    local f = io.open("/config/octoserve.conf", "r")
+    local Values = {}
+    local line
+    if f then
+        while true do
+            line = f:read()
+            if not line then break end
+            if string.match(line, "^%[" .. Section .. "%]") then break end
+        end
+        while true do
+            line = f:read()
+            if not line then break end
+            if string.match(line, "^%[" .. Section .. "%]") then break end
+            if string.match(line, "^%[%w+%]") then break end
+            if not string.match(line, "^%#") then
+                table.insert(Values, line)
+            end
+        end
+        f:close()
     end
-    while true do
-      line = f:read()
-      if not line then break end
-      if string.match(line,"^%[%w+%]") then break end
-      if not string.match(line,"^%#") then 
-        table.insert(Values,line)
-      end
-    end
-    f:close()
-  end
-  return(Values) 
+    return Values
 end
 
 function http_print(s)
-  if s then
-    io.stdout:write(tostring(s).."\r\n")
-  else
-    io.stdout:write("\r\n")
-  end
+    if s then
+        io.stdout:write(tostring(s) .. "\r\n")
+    else
+        io.stdout:write("\r\n")
+    end
 end
 
 local host = os.getenv("HTTP_HOST") or "octonet-pro"
 local proto = os.getenv("SERVER_PROTOCOL") or "HTTP/1.1"
 local query = os.getenv("QUERY_STRING")
 
--- Hilfsfunktion für korrekte CGI-Ausgabe unter lighttpd
+-- Hilfsfunktion fuer korrekte CGI-Ausgabe unter lighttpd
 function send_header(content_type, status_code)
-  if status_code then
-    print("Status: " .. status_code) -- So teilt man lighttpd einen benutzerdefinierten Status mit (z.B. "303 See Other")
-  end
-  print("Content-Type: " .. content_type)
-  print("Pragma: no-cache")
-  print("Cache-Control: no-cache\n") -- Das '\n' erzeugt die zwingend erforderliche Leerzeile
+    if status_code then
+        print("Status: " .. status_code)
+    end
+    print("Content-Type: " .. content_type)
+    print("Pragma: no-cache")
+    print("Cache-Control: no-cache\n")
 end
 
 if query and query ~= "" then
-
-  -- 1. SAUBERER LIGHTTPD-REDIRECT:
-  -- Bei einem Location-Header generiert lighttpd den Status 302/303 automatisch.
-  -- Wir senden AUSSCHLIESSLICH den Location-Header und beenden sofort mit zwei Newlines.
-  io.stdout:write("Location: https://" .. host .. "/wait.html?5\r\n\r\n")
-  
-  local Values = ""
-  Values = Values.."# SCIF Settings\n"
-  Values = Values.."# Generated by modern Probutus Web-UI\n"
-  
-  if query ~= "reset" then
-    local params = {}
-    for w in string.gmatch(query, "([%w%.%-]+%=%d+%,?%d*%,?%d*)") do
-      table.insert(params, w)
+    -- 1. SAUBERER LIGHTTPD-REDIRECT:
+    -- Weist den Browser an, waehrend des Tuner-Restarts eine Warte-Seite anzuzeigen.
+    io.stdout:write("Location: https://" .. host .. "/wait.html?5\r\n\r\n")
+    
+    local Values = ""
+    Values = Values .. "# SCIF Settings\n"
+    Values = Values .. "# Generated by modern Probutus Web-UI mit Multi-Slot-Fix\n"
+    
+    if query ~= "reset" then
+        local params = {}
+        -- Der Pattern-Match liest sowohl klassische als auch manuelle Slot ID,MHz Paare aus
+        for w in string.gmatch(query, "([%w%.%-]+%=%d+%,?%d*%,?%d*)") do
+            table.insert(params, w)
+        end
+        for _, v in ipairs(params) do
+            Values = Values .. v .. "\n"
+        end
+    else
+        Values = Values .. "Type=0\n"
+        for i = 1, 8 do Values = Values .. "Tuner" .. i .. "=0\n" end
     end
-
-    for _, v in ipairs(params) do
-      Values = Values .. v .. "\n"
-    end
-  else
-    Values = Values.."Type=0\n"
-    for i = 1, 8 do Values = Values .. "Tuner" .. i .. "=0\n" end
-  end
-
-  -- Datei sicher schreiben
-  SaveOctoserveConf("scif", Values)
-  
-  -- 2. ECHTER PROZESS-DETACH (Der wichtigste Fix):
-  -- Wir leiten STDOUT und STDERR nach /dev/null um, damit lighttpd NICHT blockiert.
-  -- Das 'nohup' sorgt dafür, dass der Befehl weiterläuft, selbst wenn lighttpd das CGI beendet.
-  local cmd = "nohup /etc/init.d/S99octo restartoctoserve > /dev/null 2>&1 &"
-  os.execute(cmd)
-  
-  -- Skript sofort hart beenden, damit lighttpd die Socket-Verbindung zum Browser schließt
-  os.exit()
+    
+    -- Datei sicher schreiben und Cache-Loeschung triggern
+    SaveOctoserveConf("scif", Values)
+    
+    -- 2. ECHTER PROZESS-DETACH (Hält den lighttpd-Socket frei):
+    local cmd = "nohup /etc/init.d/S99octo restartoctoserve > /dev/null 2>&1 &"
+    os.execute(cmd)
+    
+    -- Skript sofort beenden, damit der Webserver unblockiert weiterarbeitet
+    os.exit()
 else
-  -- REINER LESE-MODUS: Wir senden das JavaScript an den Browser
-  send_header("application/x-javascript")
-
-  Values = LoadOctoserveConf("scif")
-  
-  -- Falls die octoserve.conf komplett leer ist oder fehlt, erzeugen wir Standard-Dummies,
-  -- damit die scif.html im Browser nicht abstürzt!
-  if #Values == 0 then
-    print("Manufacturer = 0;")
-    print("Unit = 0;")
-    print("Type = 0;")
-    print("Tuner = new Array();")
-    for i = 0, 7 do
-      print("Tuner[" .. i .. "] = new Object();")
-      print("Tuner[" .. i .. "].Slot = 0;")
-      print("Tuner[" .. i .. "].Freq = 0;")
-      print("Tuner[" .. i .. "].Pin = -1;")
+    -- REINER LESE-MODUS: Wir senden das JavaScript an den Browser
+    send_header("application/x-javascript")
+    Values = LoadOctoserveConf("scif")
+    
+    -- Falls die octoserve.conf komplett leer ist oder fehlt, erzeugen wir Standard-Dummies,
+    -- damit die scif.html im Browser nicht abstuerzt!
+    if #Values == 0 then
+        print("Manufacturer = 0;")
+        print("Unit = 0;")
+        print("Type = 0;")
+        print("Tuner = new Array();")
+        for i = 0, 11 do -- Erweitert fuer bis zu 12 lokale Tuner
+            print("Tuner[" .. i .. "] = new Object();")
+            print("Tuner[" .. i .. "].Slot = 0;")
+            print("Tuner[" .. i .. "].Freq = 0;")
+            print("Tuner[" .. i .. "].Pin = -1;")
+        end
+    else
+        -- Vorhandene Konfiguration parsen und ausgeben
+        print("Tuner = new Array();")
+        -- Initialisiere alle 12 Slots vorsorglich mit 0 Werten, um unvollstaendige Configs abzufangen
+        for i = 0, 11 do
+            print("Tuner[" .. i .. "] = new Object(); Tuner[" .. i .. "].Slot = 0; Tuner[" .. i .. "].Freq = 0;")
+        end
+        
+        for _, v in pairs(Values) do
+            local name, i, v1, v2, v3 = string.match(v, "([%a%_]+)(%d-)%=([%d%.%-]+)%,?(%d*)%,?(%d*)")
+            if name == "Tuner" and i ~= "" then
+                local idx = tonumber(i) - 1
+                if idx >= 0 and idx < 12 then
+                    print(string.format("Tuner[%d].Slot = %d;", idx, tonumber(v1) or 0))
+                    if v2 == "" then v2 = 0 end
+                    print(string.format("Tuner[%d].Freq = %d;", idx, tonumber(v2) or 0))
+                    if v3 == "" then v3 = -1 end
+                    print(string.format("Tuner[%d].Pin = %d;", idx, tonumber(v3) or -1))
+                end
+            elseif name and v1 then
+                print(name .. " = " .. v1 .. ";")
+            end
+        end
     end
-  else
-    -- Vorhandene Konfiguration parsen und ausgeben
-    print("Tuner = new Array();")
-    for _, v in pairs(Values) do
-      local name, i, v1, v2, v3 = string.match(v, "([%a%_]+)(%d-)%=([%d%.%-]+)%,?(%d*)%,?(%d*)")
-      
-      if name == "Tuner" and i ~= "" then
-        local idx = tonumber(i) - 1
-        print(string.format("Tuner[%d] = new Object();", idx))
-        print(string.format("Tuner[%d].Slot = %d;", idx, tonumber(v1) or 0))
-        if v2 == "" then v2 = 0 end
-        print(string.format("Tuner[%d].Freq = %d;", idx, tonumber(v2) or 0))
-        if v3 == "" then v3 = -1 end
-        print(string.format("Tuner[%d].Pin = %d;", idx, tonumber(v3) or -1))
-      elseif name and v1 then
-        print(name .. " = " .. v1 .. ";")
-      end
-    end
-  end
 end
 
